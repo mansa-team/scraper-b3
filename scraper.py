@@ -174,9 +174,6 @@ def getHistorialRentability(ticker):
     return rentMedia5anos, rent1dia, rent5dias, rent1mes, rent6mes, rentYTD, rent1ano, rent5anos, rentTotal
 
 
-# -------------------
-
-
 
 # Download the CSV file
 driver.get(csvUrl)
@@ -277,3 +274,56 @@ with open(output_path, 'w', encoding='utf-8') as jsonlfile:
         print('\n' + str(stock))
 
 driver.quit()
+
+# Insert data into MySQL database
+
+mysql_config = {
+    'user': '',
+    'password': '',
+    'host': '',
+    'database': ''
+}
+
+conn = mysql.connector.connect(**mysql_config)
+cursor = conn.cursor()
+
+with open('stocks_data.jsonl', encoding='utf-8') as f:
+    for line in f:
+        if not line.strip():
+            continue
+        stock = json.loads(line)
+        # Prepare values (convert '' to None, cast to float where possible)
+        values = []
+        for key in [
+            'ticker', 'preco', 'dy', 'p_l', 'p_vp', 'p_ativos', 'margem_bruta', 'margem_ebit', 'marg_liquida',
+            'p_ebit', 'ev_ebit', 'divida_liquida_ebit', 'div_liq_patri', 'psr', 'p_cap_giro', 'p_at_cir_liq',
+            'liq_corrente', 'roe', 'roa', 'roic', 'patrimonio_ativos', 'passivos_ativos', 'giro_ativos',
+            'cagr_receitas_5_anos', 'cagr_lucros_5_anos', 'liquidez_media_diaria', 'vpa', 'lpa', 'peg_ratio',
+            'valor_de_mercado', 'setor', 'subsetor', 'segmento', 'tag_along', 'rent_media_5_anos', 'rent_1_dia',
+            'rent_5_dias', 'rent_1_mes', 'rent_6_meses', 'rent_ytd', 'rent_1_ano', 'rent_5_anos', 'rent_total'
+        ]:
+            v = stock.get(key, None)
+            if isinstance(v, str) and v.strip() == '':
+                v = None
+            # Try to cast to float if possible
+            if key not in ['ticker', 'setor', 'subsetor', 'segmento', 'tag_along'] and v is not None:
+                try:
+                    v = float(v)
+                except Exception:
+                    v = None
+            values.append(v)
+        cursor.execute("""
+            INSERT INTO stocks (
+                ticker, preco, dy, p_l, p_vp, p_ativos, margem_bruta, margem_ebit, marg_liquida,
+                p_ebit, ev_ebit, divida_liquida_ebit, div_liq_patri, psr, p_cap_giro, p_at_cir_liq,
+                liq_corrente, roe, roa, roic, patrimonio_ativos, passivos_ativos, giro_ativos,
+                cagr_receitas_5_anos, cagr_lucros_5_anos, liquidez_media_diaria, vpa, lpa, peg_ratio,
+                valor_de_mercado, setor, subsetor, segmento, tag_along, rent_media_5_anos, rent_1_dia,
+                rent_5_dias, rent_1_mes, rent_6_meses, rent_ytd, rent_1_ano, rent_5_anos, rent_total
+            ) VALUES (
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+            )
+        """, values)
+conn.commit()
+cursor.close()
+conn.close()
