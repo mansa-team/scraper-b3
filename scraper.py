@@ -173,7 +173,9 @@ def getHistorialRentability(ticker):
 
     return rentMedia5anos, rent1dia, rent5dias, rent1mes, rent6mes, rentYTD, rent1ano, rent5anos, rentTotal
 
-
+#
+# Scrape data
+#
 
 # Download the CSV file
 driver.get(csvUrl)
@@ -275,7 +277,9 @@ with open(output_path, 'w', encoding='utf-8') as jsonlfile:
 
 driver.quit()
 
+#
 # Insert data into MySQL database
+#
 
 mysql_config = {
     'user': '',
