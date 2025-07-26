@@ -14,7 +14,11 @@ from selenium.webdriver.support import expected_conditions as EC
 from datetime import datetime
 from time import sleep
 
+dataScrape = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
 csvUrl = 'https://statusinvest.com.br/category/AdvancedSearchResultExport?search=%7B%22Sector%22%3A%22%22%2C%22SubSector%22%3A%22%22%2C%22Segment%22%3A%22%22%2C%22my_range%22%3A%22-20%3B100%22%2C%22forecast%22%3A%7B%22upsidedownside%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22estimatesnumber%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22revisedup%22%3Atrue%2C%22reviseddown%22%3Atrue%2C%22consensus%22%3A%5B%5D%7D%2C%22dy%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_l%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22peg_ratio%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_vp%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_ativo%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22margembruta%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22margemebit%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22margemliquida%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_ebit%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22ev_ebit%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22dividaliquidaebit%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22dividaliquidapatrimonioliquido%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_sr%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_capitalgiro%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_ativocirculante%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22roe%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22roic%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22roa%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22liquidezcorrente%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22pl_ativo%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22passivo_ativo%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22giroativos%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22receitas_cagr5%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22lucros_cagr5%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22liquidezmediadiaria%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22vpa%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22lpa%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22valormercado%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%7D&CategoryType=1'
+
+csvTest = 'https://statusinvest.com.br/category/AdvancedSearchResultExport?search=%7B%22Sector%22%3A%2210%22%2C%22SubSector%22%3A%2243%22%2C%22Segment%22%3A%2284%22%2C%22my_range%22%3A%22-20%3B100%22%2C%22forecast%22%3A%7B%22upsidedownside%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22estimatesnumber%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22revisedup%22%3Atrue%2C%22reviseddown%22%3Atrue%2C%22consensus%22%3A%5B%5D%7D%2C%22dy%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_l%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22peg_ratio%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_vp%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_ativo%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22margembruta%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22margemebit%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22margemliquida%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_ebit%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22ev_ebit%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22dividaliquidaebit%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22dividaliquidapatrimonioliquido%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_sr%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_capitalgiro%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_ativocirculante%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22roe%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22roic%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22roa%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22liquidezcorrente%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22pl_ativo%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22passivo_ativo%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22giroativos%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22receitas_cagr5%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22lucros_cagr5%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22liquidezmediadiaria%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22vpa%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22lpa%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22valormercado%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%7D&CategoryType=1'
 
 options = webdriver.ChromeOptions()
 
@@ -22,6 +26,7 @@ options = webdriver.ChromeOptions()
 script_dir = os.path.dirname(os.path.abspath(__file__))
 download_folder = os.path.join(script_dir, "cache")
 os.makedirs(download_folder, exist_ok=True)
+
 prefs = {
      "download.default_directory": download_folder,
      "download.prompt_for_download": False,
@@ -45,8 +50,8 @@ if os.path.isfile(download_folder + '/statusinvest-busca-avancada.csv'):
     os.remove(download_folder + '/statusinvest-busca-avancada.csv')
 
 # Remove the existing jsonl file if it exists
-if os.path.isfile(script_dir + '/stocks_data.jsonl'):
-    os.remove(script_dir + '/stocks_data.jsonl')
+if os.path.isfile(download_folder + '/stocks_data.jsonl'):
+    os.remove(download_folder + '/stocks_data.jsonl')
 
 def formatNumber(number):
     if 'K' in number:
@@ -178,10 +183,10 @@ def getHistorialRentability(ticker):
 #
 
 # Download the CSV file
-driver.get(csvUrl)
+driver.get(csvTest)
 sleep(1)
 
-output_path = os.path.join(script_dir, 'stocks_data.jsonl')
+output_path = os.path.join(download_folder, 'stocks_data.jsonl')
 
 with open(output_path, 'w', encoding='utf-8') as jsonlfile:
 
@@ -269,10 +274,11 @@ with open(output_path, 'w', encoding='utf-8') as jsonlfile:
             'rent_ytd': rentYTD,
             'rent_1_ano': rent1ano,
             'rent_5_anos': rent5anos,
-            'rent_total': rentTotal
+            'rent_total': rentTotal,
+            'scrape_time': dataScrape
         }
 
-        jsonlfile.write(json.dumps(stock, ensure_ascii=False) + '\n\n')
+        jsonlfile.write(json.dumps(stock, ensure_ascii=False) + '\n')
         print('\n' + str(stock))
 
 driver.quit()
@@ -282,52 +288,102 @@ driver.quit()
 #
 
 mysql_config = {
-    'user': '',
+    'user': 'root',
     'password': '',
-    'host': '',
-    'database': ''
+    'host': 'localhost',
+    'database': 'b3'
 }
 
+# Connect and create table if not exists
 conn = mysql.connector.connect(**mysql_config)
 cursor = conn.cursor()
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS stocks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ticker VARCHAR(16),
+    preco FLOAT,
+    dy FLOAT,
+    p_l FLOAT,
+    p_vp FLOAT,
+    p_ativos FLOAT,
+    margem_bruta FLOAT,
+    margem_ebit FLOAT,
+    marg_liquida FLOAT,
+    p_ebit FLOAT,
+    ev_ebit FLOAT,
+    divida_liquida_ebit FLOAT,
+    div_liq_patri FLOAT,
+    psr FLOAT,
+    p_cap_giro FLOAT,
+    p_at_cir_liq FLOAT,
+    liq_corrente FLOAT,
+    roe FLOAT,
+    roa FLOAT,
+    roic FLOAT,
+    patrimonio_ativos FLOAT,
+    passivos_ativos FLOAT,
+    giro_ativos FLOAT,
+    cagr_receitas_5_anos FLOAT,
+    cagr_lucros_5_anos FLOAT,
+    liquidez_media_diaria FLOAT,
+    vpa FLOAT,
+    lpa FLOAT,
+    peg_ratio FLOAT,
+    valor_de_mercado FLOAT,
+    setor VARCHAR(64),
+    subsetor VARCHAR(64),
+    segmento VARCHAR(64),
+    tag_along VARCHAR(16),
+    rent_media_5_anos FLOAT,
+    rent_1_dia FLOAT,
+    rent_5_dias FLOAT,
+    rent_1_mes FLOAT,
+    rent_6_meses FLOAT,
+    rent_ytd FLOAT,
+    rent_1_ano FLOAT,
+    rent_5_anos FLOAT,
+    rent_total FLOAT,
+    scrape_time DATETIME
+)
+""")
+conn.commit()
 
-with open('stocks_data.jsonl', encoding='utf-8') as f:
+# Prepare for batch insert
+fields = [
+    'ticker', 'preco', 'dy', 'p_l', 'p_vp', 'p_ativos', 'margem_bruta', 'margem_ebit', 'marg_liquida',
+    'p_ebit', 'ev_ebit', 'divida_liquida_ebit', 'div_liq_patri', 'psr', 'p_cap_giro', 'p_at_cir_liq',
+    'liq_corrente', 'roe', 'roa', 'roic', 'patrimonio_ativos', 'passivos_ativos', 'giro_ativos',
+    'cagr_receitas_5_anos', 'cagr_lucros_5_anos', 'liquidez_media_diaria', 'vpa', 'lpa', 'peg_ratio',
+    'valor_de_mercado', 'setor', 'subsetor', 'segmento', 'tag_along', 'rent_media_5_anos', 'rent_1_dia',
+    'rent_5_dias', 'rent_1_mes', 'rent_6_meses', 'rent_ytd', 'rent_1_ano', 'rent_5_anos', 'rent_total',
+    'scrape_time'
+]
+
+to_insert = []
+with open('cache/stocks_data.jsonl', encoding='utf-8') as f:
     for line in f:
         if not line.strip():
             continue
         stock = json.loads(line)
-        # Prepare values (convert '' to None, cast to float where possible)
-        values = []
-        for key in [
-            'ticker', 'preco', 'dy', 'p_l', 'p_vp', 'p_ativos', 'margem_bruta', 'margem_ebit', 'marg_liquida',
-            'p_ebit', 'ev_ebit', 'divida_liquida_ebit', 'div_liq_patri', 'psr', 'p_cap_giro', 'p_at_cir_liq',
-            'liq_corrente', 'roe', 'roa', 'roic', 'patrimonio_ativos', 'passivos_ativos', 'giro_ativos',
-            'cagr_receitas_5_anos', 'cagr_lucros_5_anos', 'liquidez_media_diaria', 'vpa', 'lpa', 'peg_ratio',
-            'valor_de_mercado', 'setor', 'subsetor', 'segmento', 'tag_along', 'rent_media_5_anos', 'rent_1_dia',
-            'rent_5_dias', 'rent_1_mes', 'rent_6_meses', 'rent_ytd', 'rent_1_ano', 'rent_5_anos', 'rent_total'
-        ]:
+        row = []
+        for key in fields:
             v = stock.get(key, None)
             if isinstance(v, str) and v.strip() == '':
                 v = None
-            # Try to cast to float if possible
-            if key not in ['ticker', 'setor', 'subsetor', 'segmento', 'tag_along'] and v is not None:
+            if key not in ['ticker', 'setor', 'subsetor', 'segmento', 'tag_along', 'scrape_time'] and v is not None:
                 try:
                     v = float(v)
                 except Exception:
                     v = None
-            values.append(v)
-        cursor.execute("""
-            INSERT INTO stocks (
-                ticker, preco, dy, p_l, p_vp, p_ativos, margem_bruta, margem_ebit, marg_liquida,
-                p_ebit, ev_ebit, divida_liquida_ebit, div_liq_patri, psr, p_cap_giro, p_at_cir_liq,
-                liq_corrente, roe, roa, roic, patrimonio_ativos, passivos_ativos, giro_ativos,
-                cagr_receitas_5_anos, cagr_lucros_5_anos, liquidez_media_diaria, vpa, lpa, peg_ratio,
-                valor_de_mercado, setor, subsetor, segmento, tag_along, rent_media_5_anos, rent_1_dia,
-                rent_5_dias, rent_1_mes, rent_6_meses, rent_ytd, rent_1_ano, rent_5_anos, rent_total
-            ) VALUES (
-                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
-            )
-        """, values)
+            row.append(v)
+        to_insert.append(tuple(row))
+
+# Batch insert
+sql = f"""
+    INSERT INTO stocks ({', '.join(fields)})
+    VALUES ({', '.join(['%s'] * len(fields))})
+"""
+cursor.executemany(sql, to_insert)
 conn.commit()
 cursor.close()
 conn.close()
