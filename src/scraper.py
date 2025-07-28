@@ -21,9 +21,12 @@ max_workers = 6
 start_time = time.time()
 current_year = datetime.now().year
 
+
 script_dir = os.path.dirname(os.path.abspath(__file__))
 download_folder = os.path.join(script_dir, "cache")
 os.makedirs(download_folder, exist_ok=True)
+
+csvPath = os.path.join(download_folder, 'statusinvest-busca-avancada.csv')
 
 output_path = os.path.join(download_folder, 'stocks_data.jsonl')
 dateScrape = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -360,11 +363,18 @@ if os.path.isfile(download_folder + '/stocks_data.jsonl'):
 
 # Download the CSV file
 driver.get(csvUrl)
-sleep(3)
+
+# Wait for the CSV file to be downloaded
+timeout = 60  # seconds
+start_wait = time.time()
+while not os.path.exists(csvPath):
+    if time.time() - start_wait > timeout:
+        raise TimeoutError(f"File {csvPath} was not found within {timeout} seconds.")
+    time.sleep(1)
+
 driver.quit()
 
 # Read CSV rows
-csvPath = os.path.join(download_folder, 'statusinvest-busca-avancada.csv')
 reader = csv.DictReader(open(csvPath, 'r'), delimiter=';')
 rows = []
 for row in reader:
