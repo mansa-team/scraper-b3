@@ -363,14 +363,14 @@ if os.path.isfile(download_folder + '/stocks_data.jsonl'):
 
 # Download the CSV file
 print(f"Downloading CSV file to {download_folder}")
-driver.get(csvUrl)
+# driver.get(csvUrl)
 
 # Wait for the CSV file to be downloaded
 timeout = 15  # seconds
 start_wait = time.time()
 while not os.path.exists(csvPath):
     if time.time() - start_wait > timeout:
-        raise TimeoutError(f"File {csvPath} was not found within {timeout} seconds. Files in download_folder: {os.listdir(download_folder) if os.path.exists(download_folder) else 'Folder does not exist'}")
+        raise TimeoutError(f'File {csvPath} was not found within {timeout} seconds.')
 
     time.sleep(1)
 
