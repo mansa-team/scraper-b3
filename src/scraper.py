@@ -363,7 +363,7 @@ if os.path.isfile(download_folder + '/stocks_data.jsonl'):
 
 # Download the CSV file
 print(f"Downloading CSV file to {download_folder}")
-# driver.get(csvUrl)
+driver.get(csvUrl)
 
 # Wait for the CSV file to be downloaded
 timeout = 15  # seconds
