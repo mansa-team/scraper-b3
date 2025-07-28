@@ -25,31 +25,20 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install Latest Chrome
+    - name: Install Chrome
       run: |
-        # Install dependencies
         sudo apt-get update
-        sudo apt-get install -y wget unzip libxss1 libappindicator1 libindicator7 fonts-liberation
-        
-        # Download and install latest stable Chrome
-        wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-        sudo dpkg -i google-chrome-stable_current_amd64.deb || sudo apt-get -fy install
+        sudo apt-get install -y google-chrome-stable
         
         # Verify installation
-        google-chrome --version
-        which google-chrome
+        echo "Chrome version: $(google-chrome-stable --version)"
+        echo "Installed at: $(which google-chrome-stable)"
 
     - name: Install Python dependencies
       run: |
         pip install --upgrade pip
         pip install -r requirements.txt
         python -c "import chromedriver_autoinstaller; chromedriver_autoinstaller.install()"
-
-    - name: Verify versions
-      run: |
-        echo "=== Version Information ==="
-        google-chrome --version
-        python -c "import chromedriver_autoinstaller as c; print(f'ChromeDriver: {c.get_chrome_version()}')"
 
     - name: Run scraper
       run: |
