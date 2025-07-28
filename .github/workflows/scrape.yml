@@ -38,7 +38,7 @@ jobs:
     - name: Verify installations
       run: |
         google-chrome --version
-        python -c "import chromedriver_autoinstaller as c; print(f'ChromeDriver: {c.get_chromedriver_version()}')"
+        python -c "import chromedriver_autoinstaller as c; print(f'ChromeDriver: {c.get_chrome_version()}')"
         pip list
 
     - name: Run scraper
