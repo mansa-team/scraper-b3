@@ -2,9 +2,9 @@ name: Stock Scraper
 
 on:
   schedule:
-    - cron: '20 12 * * *'  # 9:20 AM BRT = 12:20 PM UTC
-    - cron: '0 16 * * *'   # 1:00 PM BRT = 4:00 PM UTC
-    - cron: '30 21 * * *'  # 6:30 PM BRT = 9:30 PM UTC
+    - cron: '20 12 * * *'  # 9:20 AM BRT
+    - cron: '0 16 * * *'   # 1:00 PM BRT
+    - cron: '30 21 * * *'  # 6:30 PM BRT
   workflow_dispatch:
 
 jobs:
@@ -17,7 +17,7 @@ jobs:
       MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
 
     steps:
-    - name: Checkout repository
+    - name: Checkout code
       uses: actions/checkout@v4
 
     - name: Set up Python
@@ -25,26 +25,21 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y wget unzip
-
-    - name: Install Chrome
+    - name: Install Chrome (required for Selenium)
       uses: browser-actions/setup-chrome@v1
       with:
-        chrome-version: 'latest'
+        chrome-version: 'latest-stable'
 
-    - name: Install Python dependencies
+    - name: Install dependencies
       run: |
         pip install --upgrade pip
-        pip install selenium webdriver-manager mysql-connector-python
+        pip install selenium chromedriver-autoinstaller webdriver-manager mysql-connector-python
 
     - name: Verify installations
       run: |
         google-chrome --version
-        chromedriver --version
         python -c "import selenium; print(f'Selenium {selenium.__version__}')"
+        python -c "import chromedriver_autoinstaller; print('chromedriver-autoinstaller available')"
 
-    - name: Run Python script
+    - name: Run scraper
       run: python src/scraper.py

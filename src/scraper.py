@@ -8,15 +8,11 @@ import re
 
 import selenium
 import mysql.connector
+import chromedriver_autoinstaller
 
 from time import sleep
 from datetime import datetime
 from selenium import webdriver
-
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.chrome.options import Options
 
 # Configs
 
@@ -39,6 +35,8 @@ csvUrlTest = 'https://statusinvest.com.br/category/AdvancedSearchResultExport?se
 #
 # Setup Selenium WebDriver
 #
+
+chromedriver_autoinstaller.install()
 
 options = webdriver.ChromeOptions()
 
@@ -340,7 +338,7 @@ def scrape_stock(row):
             stock[f'dy_{year}'] = value
         for year, value in annualLiquidity.items():
             stock[f'annualLiquidity_{year}'] = value
-        print('DEBUG STOCK:', stock)
+        print('\n', stock)
         return stock
     except Exception as e:
         return None
