@@ -366,7 +366,7 @@ print(f"Downloading CSV file to {download_folder}")
 driver.get(csvUrl)
 
 # Wait for the CSV file to be downloaded
-timeout = 60  # seconds
+timeout = 15  # seconds
 start_wait = time.time()
 while not os.path.exists(csvPath):
     if time.time() - start_wait > timeout:
