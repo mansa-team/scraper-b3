@@ -25,10 +25,21 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install dependencies
+    - name: Install system dependencies
       run: |
-        pip install selenium chromedriver-autoinstaller
+        sudo apt-get update
+        sudo apt-get install -y wget
+
+    - name: Install Python dependencies
+      run: |
+        pip install -r requirements.txt
         python -c "import chromedriver_autoinstaller; chromedriver_autoinstaller.install()"
+
+    - name: Verify installations
+      run: |
+        google-chrome --version
+        python -c "import chromedriver_autoinstaller as c; print(f'ChromeDriver: {c.get_chromedriver_version()}')"
+        pip list
 
     - name: Run scraper
       run: python src/scraper.py
