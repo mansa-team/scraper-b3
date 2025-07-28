@@ -4,6 +4,7 @@ import json
 import csv
 import time
 import concurrent.futures
+import re
 
 import selenium
 import mysql.connector
@@ -14,9 +15,11 @@ from datetime import datetime
 from selenium import webdriver
 
 # Configs
-start_time = time.time()
 
 max_workers = 6
+
+start_time = time.time()
+current_year = datetime.now().year
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 download_folder = os.path.join(script_dir, "cache")
@@ -48,7 +51,7 @@ options.add_experimental_option("prefs", prefs)
 options.add_argument('--headless=new')
 options.add_argument('--no-sandbox')
 options.add_argument('--disable-dev-shm-usage')
-# options.add_argument('user-agent=VALID_USER_AGENT')
+options.add_argument('user-agent=VALID_USER_AGENT')
 
 options.add_argument('--disable-logging')
 options.add_argument('--log-level=3')
@@ -56,7 +59,6 @@ options.add_argument('--silent')
 
 options.add_extension(os.path.join(script_dir, 'data/ublock.crx'))
 
-options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36")
 driver = webdriver.Chrome(options=options)
 
 
@@ -100,7 +102,6 @@ def scrape_stock(row):
     options.add_argument('--log-level=3')
     options.add_argument('--silent')
 
-    # options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36")
     driver = webdriver.Chrome(options=options)
 
     try:
@@ -135,6 +136,12 @@ def scrape_stock(row):
         PEG_RATIO = row.get('PEG Ratio', '')
         VALOR_DE_MERCADO = row.get('VALOR DE MERCADO', '')
 
+        # Ensure PRECO is a valid float and not zero
+        try:
+            PRECO = float(PRECO)
+        except Exception:
+            PRECO = PRECO
+
         # Get sectors
         driver.get(f'https://statusinvest.com.br/acoes/{TICKER}')
         try:
@@ -167,7 +174,9 @@ def scrape_stock(row):
                     tagAlong = tagAlong.replace('TAG ALONG', '')
                     tagAlong = tagAlong.replace(' ', '')
                     tagAlong = tagAlong.replace('%', '')
-                    if not tagAlong == '--':
+                    if tagAlong == '--':
+                        tagAlong = ''
+                    elif not tagAlong == '--':
                         float(tagAlong)
                     break
         except Exception:
@@ -191,7 +200,7 @@ def scrape_stock(row):
             historicalRent = historicalRent.replace('1 ano', '\nRentabilidade 1 ano: ')
             historicalRent = historicalRent.replace('5 anos', '\nRentabilidade 5 anos: ')
             historicalRent = historicalRent.replace('Todos', '\nRentabilidade Total: ')
-            rent1dia = rent5dias = rent1mes = rent6mes = rentYTD = rent1ano = rent5anos = rentTotal = rentMedia5anos = ''
+            rent1dia = rent5dias = rent1mes = rent6mes = rent_12meses = rent1ano = rent5anos = rentTotal = rentMedia5anos = ''
             historicalRent = historicalRent.split('\n')
             for rent in historicalRent:
                 if 'Rentabilidade 1 dia: ' in rent:
@@ -203,7 +212,7 @@ def scrape_stock(row):
                 elif 'Rentabilidade 6 meses: ' in rent:
                     rent6mes = formatNumber(rent.replace('Rentabilidade 6 meses: ', '').strip())
                 elif 'Rentabilidade Year to date: ' in rent:
-                    rentYTD = formatNumber(rent.replace('Rentabilidade Year to date: ', '').strip())
+                    rent_12meses = formatNumber(rent.replace('Rentabilidade Year to date: ', '').strip())
                 elif 'Rentabilidade 1 ano: ' in rent:
                     rent1ano = formatNumber(rent.replace('Rentabilidade 1 ano: ', '').strip())
                 elif 'Rentabilidade 5 anos: ' in rent:
@@ -215,79 +224,70 @@ def scrape_stock(row):
             except Exception:
                 rentMedia5anos = ''
         except Exception:
-            rent1dia = rent5dias = rent1mes = rent6mes = rentYTD = rent1ano = rent5anos = rentTotal = rentMedia5anos = ''
+            rent1dia = rent5dias = rent1mes = rent6mes = rent_12meses = rent1ano = rent5anos = rentTotal = rentMedia5anos = ''
 
         # Get historical dividends yields
         try:
-            def parseJSON(data):
-                pastDividendos = ''
-
-                for dividendos in data['assetEarningsYearlyModels']:
-                    dividendos = f'{pastDividendos} \n {dividendos}'
-                    pastDividendos = dividendos
-
-                return dividendos
-    
-            driver.get(f'https://statusinvest.com.br/acao/companytickerprovents?companyName=weg&ticker={TICKER}&chartProventsType=2')
+            driver.get(f'https://statusinvest.com.br/acao/companytickerprovents?companyName=&ticker={TICKER}&chartProventsType=2')
             jsonData = (driver.find_element('xpath', '/html/body/pre').text)
             jsonData = json.loads(jsonData)
-            dividendList = parseJSON(jsonData)
 
-            for i in dividendList:
-                dividendList = dividendList.replace('{', '')
-                dividendList = dividendList.replace('}', '')
-                dividendList = dividendList.replace('"', '')
-                dividendList = dividendList.replace('[', '')
-                dividendList = dividendList.replace(']', '')
-                dividendList = dividendList.replace(',', '')
-                dividendList = dividendList.replace(':', '')
-                dividendList = dividendList.replace('\'', '')
-                dividendList = dividendList.replace('  ', ' ')
-
-                dividendList = dividendList.replace('rank', '')
-                dividendList = dividendList.replace('value', '')
-
-            dividendList = dividendList.replace(' ', '\n')
-            dividendList = dividendList.split('\n')
-            dividendList = [item for item in dividendList if item]
-            dividendList = [item for item in dividendList if not (item.isdigit() and len(item) == 4)]
-
-            dividendList = dividendList[::-1]
-
-            for i in dividendList:
-                if i == ' ' or i == '':
-                    dividendList.remove(i)
-
-            dividendList = [float(item) for item in dividendList]
+            dividendList = {int(item['rank']): float(item['value']) for item in jsonData.get('assetEarningsYearlyModels', [])}
 
             try:
-                dy_medio_5anos = (((dividendList[0] + dividendList[1] + dividendList[2] + dividendList[3] + dividendList[4])/5) / 36.19) * 100
+                dy_medio_5anos = (((dividendList[(current_year - 1)] + dividendList[(current_year - 2)] + dividendList[(current_year - 3)] + dividendList[(current_year - 4)] + dividendList[(current_year - 5)])/5) / PRECO) * 100
                 dy_medio_5anos = round(dy_medio_5anos, 2)
             except Exception:
+                print(f"Error calculating average dividend yield for {TICKER}")
                 dy_medio_5anos = ''
 
-            dy = []
-
-            for i, value in enumerate(dividendList[1:5]):
-                try:
-                    dividendyield = (value / 36.19) * 100
-                    dividendyield = round(dividendyield, 2)
-                except Exception:
-                    dividendyield = ''
-
-                dy.append(dividendyield)
-        except Exception as e:
-            dy = []
+            dy = {}
+            for year, value in dividendList.items():
+                if PRECO is not None and PRECO > 0:
+                    try:
+                        dividendyield = (value / PRECO) * 100
+                        dividendyield = round(dividendyield, 2)
+                    except Exception:
+                        dividendyield = None
+                else:
+                    dividendyield = None
+                dy[year] = dividendyield
+        except Exception:
+            print(f"Error calculating dividend yields for {TICKER}")
             dy_medio_5anos = ''
+            dy = {}
 
-        # Get historical liquidity
+        valid_years = lambda y: isinstance(y, int) and 1000 <= y <= 9999
+        dividendList = {year: value for year, value in dividendList.items() if valid_years(year)}
+        dy = {year: value for year, value in dy.items() if valid_years(year)}
 
+        # Get historical liquidity per year
+        try:
+            driver.get(f'https://statusinvest.com.br/acao/payoutresult?code={TICKER}&companyid=0&type=2')
+            jsonData = (driver.find_element('xpath', '/html/body/pre').text)
+            jsonData = json.loads(jsonData)
+
+            years = [int(year) for year in jsonData['chart']['category']]
+            annualLiquidity = [item['value'] for item in jsonData['chart']['series']['lucroLiquido']]
+            annualLiquidity = dict(zip(years, annualLiquidity))
+
+        except Exception:
+            print(f"Error scraping stock data for {TICKER}")
+            annualLiquidity = {}
 
         # Create stock dictionary
         stock = {
+            'scrape_time': dateScrape,
             'ticker': TICKER,
+            'setor': setor,
+            'subsetor': subsetor,
+            'segmento': segmento,
             'preco': PRECO,
+            'rent_12meses': rent_12meses,
+            'rent_media_5_anos': rentMedia5anos,
+            'tag_along': tagAlong,
             'dy_12_meses': DY_12_MESES,
+            'dy_medio_5anos': dy_medio_5anos,
             'p_l': P_L,
             'p_vp': P_VP,
             'p_ativos': P_ATIVOS,
@@ -315,27 +315,22 @@ def scrape_stock(row):
             'lpa': LPA,
             'peg_ratio': PEG_RATIO,
             'valor_de_mercado': VALOR_DE_MERCADO,
-            'tag_along': tagAlong,
-            'rent_media_5_anos': rentMedia5anos,
             'rent_1_dia': rent1dia,
             'rent_5_dias': rent5dias,
             'rent_1_mes': rent1mes,
             'rent_6_meses': rent6mes,
-            'rent_ytd': rentYTD,
             'rent_1_ano': rent1ano,
             'rent_5_anos': rent5anos,
-            'rent_total': rentTotal,
-            'dy_medio_5anos': dy_medio_5anos,
-            'dy_1ano_atras': dy[0],
-            'dy_2anos_atras': dy[1],
-            'dy_3anos_atras': dy[2],
-            'dy_4anos_atras': dy[3],
-            'setor': setor,
-            'subsetor': subsetor,
-            'segmento': segmento,
-            'scrape_time': dateScrape
+            'rent_total': rentTotal
         }
-
+        # Increment dynamic dividendos_{year}, dy_{year}, and annualLiquidity_{year} into stock dict
+        for year, value in dividendList.items():
+            stock[f'dividendos_{year}'] = value
+        for year, value in dy.items():
+            stock[f'dy_{year}'] = value
+        for year, value in annualLiquidity.items():
+            stock[f'annualLiquidity_{year}'] = value
+        print('DEBUG STOCK:', stock)
         return stock
     except Exception as e:
         return None
@@ -356,7 +351,7 @@ if os.path.isfile(download_folder + '/stocks_data.jsonl'):
     os.remove(download_folder + '/stocks_data.jsonl')
 
 # Download the CSV file
-driver.get(csvUrlTest)
+driver.get(csvUrl)
 sleep(3)
 driver.quit()
 
@@ -391,25 +386,73 @@ mysql_config = {
     'host': 'localhost',
     'database': 'b3'
 }
-fields = [
-    'ticker', 'preco', 'dy_12_meses', 'p_l', 'p_vp', 'p_ativos', 'margem_bruta', 'margem_ebit', 'marg_liquida',
-    'p_ebit', 'ev_ebit', 'divida_liquida_ebit', 'div_liq_patri', 'psr', 'p_cap_giro', 'p_at_cir_liq',
-    'liq_corrente', 'roe', 'roa', 'roic', 'patrimonio_ativos', 'passivos_ativos', 'giro_ativos',
-    'cagr_receitas_5_anos', 'cagr_lucros_5_anos', 'liquidez_media_diaria', 'vpa', 'lpa', 'peg_ratio',
-    'valor_de_mercado', 'tag_along', 'rent_media_5_anos', 'rent_1_dia',
-    'rent_5_dias', 'rent_1_mes', 'rent_6_meses', 'rent_ytd', 'rent_1_ano', 'rent_5_anos', 'rent_total',
-    'dy_medio_5anos', 'dy_1ano_atras', 'dy_2anos_atras', 'dy_3anos_atras', 'dy_4anos_atras',
-    'setor', 'subsetor', 'segmento', 'scrape_time'
-]
-
 conn = mysql.connector.connect(**mysql_config)
 cursor = conn.cursor()
-cursor.execute("""
+
+# Collect all years for dividendos, dy, and annualLiquidity before CREATE TABLE
+all_dividendos_years = set()
+all_dy_years = set()
+all_annualLiquidity_years = set()
+year_pattern = re.compile(r'_(\d{4})$')
+for stock in results:
+    for key in stock.keys():
+        m = year_pattern.search(key)
+        if key.startswith('dividendos_') and m:
+            year = m.group(1)
+            all_dividendos_years.add(year)
+        if key.startswith('dy_') and m:
+            year = m.group(1)
+            all_dy_years.add(year)
+        if key.startswith('annualLiquidity_') and m:
+            year = m.group(1)
+            all_annualLiquidity_years.add(year)
+fields = [
+    'scrape_time', 'ticker', 'setor', 'subsetor', 'segmento', 'preco', 'rent_12meses', 'rent_media_5_anos',
+    'tag_along', 'dy_12_meses', 'dy_medio_5anos', 'p_l', 'p_vp', 'p_ativos', 'margem_bruta', 'margem_ebit',
+    'marg_liquida', 'p_ebit', 'ev_ebit', 'divida_liquida_ebit', 'div_liq_patri', 'psr', 'p_cap_giro',
+    'p_at_cir_liq', 'liq_corrente', 'roe', 'roa', 'roic', 'patrimonio_ativos', 'passivos_ativos', 'giro_ativos',
+    'cagr_receitas_5_anos', 'cagr_lucros_5_anos', 'liquidez_media_diaria', 'vpa', 'lpa', 'peg_ratio',
+    'valor_de_mercado', 'rent_1_dia', 'rent_5_dias', 'rent_1_mes', 'rent_6_meses', 'rent_1_ano', 
+    'rent_5_anos', 'rent_total'
+]
+fields += [f'dividendos_{year}' for year in sorted(all_dividendos_years)]
+fields += [f'dy_{year}' for year in sorted(all_dy_years)]
+fields += [f'annualLiquidity_{year}' for year in sorted(all_annualLiquidity_years)]
+
+# Ensure all dynamic columns exist in the table (for new years)
+def ensure_column_exists(cursor, table, col):
+    cursor.execute(f"SHOW COLUMNS FROM {table} LIKE '{col}'")
+    if not cursor.fetchone():
+        cursor.execute(f"ALTER TABLE {table} ADD COLUMN {col} FLOAT")
+        conn.commit()
+
+# Create table if not exists
+col_dividendos = ',\n    '.join([f'dividendos_{year} FLOAT' for year in sorted(all_dividendos_years)])
+col_dy = ',\n    '.join([f'dy_{year} FLOAT' for year in sorted(all_dy_years)])
+col_annualLiquidity = ',\n    '.join([f'annualLiquidity_{year} FLOAT' for year in sorted(all_annualLiquidity_years)])
+
+dynamic_columns = ''
+if col_dividendos:
+    dynamic_columns += ',\n    ' + col_dividendos
+if col_dy:
+    dynamic_columns += ',\n    ' + col_dy
+if col_annualLiquidity:
+    dynamic_columns += ',\n    ' + col_annualLiquidity
+
+cursor.execute(f"""
 CREATE TABLE IF NOT EXISTS stocks (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    scrape_time DATETIME,
     ticker VARCHAR(16),
+    setor VARCHAR(64),
+    subsetor VARCHAR(64),
+    segmento VARCHAR(64),
     preco FLOAT,
+    rent_12meses FLOAT,
+    rent_media_5_anos FLOAT,
+    tag_along VARCHAR(16),
     dy_12_meses FLOAT,
+    dy_medio_5anos FLOAT,
     p_l FLOAT,
     p_vp FLOAT,
     p_ativos FLOAT,
@@ -437,28 +480,35 @@ CREATE TABLE IF NOT EXISTS stocks (
     lpa FLOAT,
     peg_ratio FLOAT,
     valor_de_mercado FLOAT,
-    tag_along VARCHAR(16),
-    rent_media_5_anos FLOAT,
     rent_1_dia FLOAT,
     rent_5_dias FLOAT,
     rent_1_mes FLOAT,
     rent_6_meses FLOAT,
-    rent_ytd FLOAT,
     rent_1_ano FLOAT,
     rent_5_anos FLOAT,
-    rent_total FLOAT,
-    dy_medio_5anos FLOAT,
-    dy_1ano_atras FLOAT,
-    dy_2anos_atras FLOAT,
-    dy_3anos_atras FLOAT,
-    dy_4anos_atras FLOAT,
-    setor VARCHAR(64),
-    subsetor VARCHAR(64),
-    segmento VARCHAR(64),
-    scrape_time DATETIME
+    rent_total FLOAT{dynamic_columns}
 )
 """)
 conn.commit()
+
+# Ensure all dynamic columns exist (for new years)
+for col in [f'dividendos_{year}' for year in sorted(all_dividendos_years)] + [f'dy_{year}' for year in sorted(all_dy_years)] + [f'annualLiquidity_{year}' for year in sorted(all_annualLiquidity_years)]:
+    ensure_column_exists(cursor, 'stocks', col)
+
+# Add dynamic columns to fields list if not present
+for year in sorted(all_dividendos_years):
+    col_name = f'dividendos_{year}'
+    if col_name not in fields:
+        fields.append(col_name)
+for year in sorted(all_dy_years):
+    col_name = f'dy_{year}'
+    if col_name not in fields:
+        fields.append(col_name)
+for year in sorted(all_annualLiquidity_years):
+    col_name = f'annualLiquidity_{year}'
+    if col_name not in fields:
+        fields.append(col_name)
+
 to_insert = []
 for stock in results:
     row = []
