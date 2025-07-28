@@ -370,7 +370,8 @@ timeout = 15  # seconds
 start_wait = time.time()
 while not os.path.exists(csvPath):
     if time.time() - start_wait > timeout:
-        raise TimeoutError(f"File {csvPath} was not found within {timeout} seconds.")
+        raise TimeoutError(f"File {csvPath} was not found within {timeout} seconds. Files in download_folder: {os.listdir(download_folder) if os.path.exists(download_folder) else 'Folder does not exist'}")
+
     time.sleep(1)
 
 driver.quit()
