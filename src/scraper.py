@@ -13,6 +13,11 @@ from time import sleep
 from datetime import datetime
 from selenium import webdriver
 
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.options import Options
+
 # Configs
 
 max_workers = 6
@@ -58,7 +63,10 @@ options.add_argument('--silent')
 
 options.add_extension(os.path.join(script_dir, 'data/ublock.crx'))
 
-driver = webdriver.Chrome(options=options)
+driver = webdriver.Chrome(
+    #service=Service(ChromeDriverManager().install()),
+    options=options
+    )
 
 
 #
@@ -101,7 +109,10 @@ def scrape_stock(row):
     options.add_argument('--log-level=3')
     options.add_argument('--silent')
 
-    driver = webdriver.Chrome(options=options)
+    driver = webdriver.Chrome(
+    #service=Service(ChromeDriverManager().install()),
+    options=options
+    )
 
     try:
         TICKER = row.get('TICKER', '')
