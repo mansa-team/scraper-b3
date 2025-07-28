@@ -9,7 +9,6 @@ import re
 import selenium
 import mysql.connector
 
-
 from time import sleep
 from datetime import datetime
 from selenium import webdriver
@@ -381,10 +380,10 @@ with open(output_path, 'w', encoding='utf-8') as jsonlfile:
 #
 
 mysql_config = {
-    'user': 'root',
-    'password': '',
-    'host': 'localhost',
-    'database': 'b3'
+    'user': os.environ.get('MYSQL_USER'),
+    'password': os.environ.get('MYSQL_PASSWORD'),
+    'host': os.environ.get('MYSQL_HOST'),
+    'database': os.environ.get('MYSQL_DATABASE')
 }
 conn = mysql.connector.connect(**mysql_config)
 cursor = conn.cursor()
