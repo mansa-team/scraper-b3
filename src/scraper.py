@@ -10,6 +10,7 @@ import selenium
 import mysql.connector
 import chromedriver_autoinstaller
 
+from dotenv import load_dotenv
 from time import sleep
 from datetime import datetime
 from selenium import webdriver
@@ -21,6 +22,7 @@ max_workers = 6
 start_time = time.time()
 current_year = datetime.now().year
 
+load_dotenv()
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 download_folder = os.path.join(script_dir, "cache")
@@ -407,11 +409,12 @@ with open(output_path, 'w', encoding='utf-8') as jsonlfile:
 #
 
 mysql_config = {
-    'user': os.environ.get('MYSQL_USER'),
-    'password': os.environ.get('MYSQL_PASSWORD'),
-    'host': os.environ.get('MYSQL_HOST'),
-    'database': os.environ.get('MYSQL_DATABASE')
+    'user': os.getenv('MYSQL_USER') or os.environ.get('MYSQL_USER'),
+    'password': os.getenv('MYSQL_PASSWORD') or os.environ.get('MYSQL_PASSWORD'),
+    'host': os.getenv('MYSQL_HOST') or os.environ.get('MYSQL_HOST'),
+    'database': os.getenv('MYSQL_DATABASE') or os.environ.get('MYSQL_DATABASE')
 }
+
 conn = mysql.connector.connect(**mysql_config)
 cursor = conn.cursor()
 
