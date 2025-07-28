@@ -25,21 +25,10 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install Chrome (required for Selenium)
-      uses: browser-actions/setup-chrome@v1
-      with:
-        chrome-version: 'latest-stable'
-
     - name: Install dependencies
       run: |
-        pip install --upgrade pip
-        pip install selenium chromedriver-autoinstaller webdriver-manager mysql-connector-python
-
-    - name: Verify installations
-      run: |
-        google-chrome --version
-        python -c "import selenium; print(f'Selenium {selenium.__version__}')"
-        python -c "import chromedriver_autoinstaller; print('chromedriver-autoinstaller available')"
+        pip install selenium chromedriver-autoinstaller
+        python -c "import chromedriver_autoinstaller; chromedriver_autoinstaller.install()"
 
     - name: Run scraper
       run: python src/scraper.py
