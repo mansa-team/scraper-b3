@@ -354,16 +354,16 @@ download_folder = os.path.join(script_dir, "cache")
 os.makedirs(download_folder, exist_ok=True)
 
 # Remove the existing CSV file if it exists
-if os.path.isfile(download_folder + '/statusinvest-busca-avancada.csv'):
-    os.remove(download_folder + '/statusinvest-busca-avancada.csv')
+#if os.path.isfile(download_folder + '/statusinvest-busca-avancada.csv'):
+    #os.remove(download_folder + '/statusinvest-busca-avancada.csv')
 
 # Remove the existing jsonl file if it exists
-if os.path.isfile(download_folder + '/stocks_data.jsonl'):
-    os.remove(download_folder + '/stocks_data.jsonl')
+#if os.path.isfile(download_folder + '/stocks_data.jsonl'):
+    #os.remove(download_folder + '/stocks_data.jsonl')
 
 # Download the CSV file
 print(f"Downloading CSV file to {download_folder}")
-driver.get(csvUrl)
+#driver.get(csvUrl)
 
 # Wait for the CSV file to be downloaded
 timeout = 15  # seconds
