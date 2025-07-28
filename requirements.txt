@@ -2,3 +2,4 @@ selenium==4.34.2
 chromedriver-autoinstaller==0.6.4
 webdriver_manager==4.0.2
 mysql-connector-python==9.4.0
+pyvirtualdisplay

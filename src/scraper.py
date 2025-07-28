@@ -10,9 +10,13 @@ import selenium
 import mysql.connector
 import chromedriver_autoinstaller
 
+from pyvirtualdisplay import Display
 from time import sleep
 from datetime import datetime
 from selenium import webdriver
+
+display = Display(visible=0, size=(800, 800))  
+display.start()
 
 # Configs
 
@@ -39,7 +43,7 @@ csvUrlTest = 'https://statusinvest.com.br/category/AdvancedSearchResultExport?se
 # Setup Selenium WebDriver
 #
 
-#chromedriver_autoinstaller.install()
+chromedriver_autoinstaller.install()
 
 options = webdriver.ChromeOptions()
 
@@ -349,6 +353,10 @@ def scrape_stock(row):
         return None
     finally:
         driver.quit()
+
+# Test Selenium WebDriver
+driver.get('http://github.com')
+print(driver.title)
 
 # Set up the download folder
 script_dir = os.path.dirname(os.path.abspath(__file__))
