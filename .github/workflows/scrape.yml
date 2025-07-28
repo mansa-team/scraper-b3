@@ -25,14 +25,14 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Set up Chrome
-      uses: browser-actions/setup-chrome@v2
-      with:
-        chrome-version: 138
-        install-chromedriver: true
-
-    - name: Install Python dependencies
+    - name: Purge previous Chrome installs
       run: |
+        apt list --installed
+        sudo apt purge google-chrome-stable
+
+    - name: Install Python dependencies and xvfb
+      run: |
+        sudo apt-get install xvfb
         pip install --upgrade pip
         pip install -r requirements.txt
 
