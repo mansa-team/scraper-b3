@@ -42,4 +42,7 @@ jobs:
         pip list
 
     - name: Run scraper
-      run: python src/scraper.py
+      run: |
+        pwd
+        ls -lR
+        python src/scraper.py
