@@ -68,7 +68,6 @@ options.add_argument('--silent')
 options.add_extension(os.path.join(script_dir, 'data/ublock.crx'))
 
 driver = webdriver.Chrome(
-    #service=Service(ChromeDriverManager().install()),
     options=options
     )
 
@@ -115,7 +114,6 @@ def scrape_stock(row):
     options.add_argument('--silent')
 
     driver = webdriver.Chrome(
-    #service=Service(ChromeDriverManager().install()),
     options=options
     )
 
@@ -253,7 +251,6 @@ def scrape_stock(row):
                 dy_medio_5anos = (((dividendList[(current_year - 1)] + dividendList[(current_year - 2)] + dividendList[(current_year - 3)] + dividendList[(current_year - 4)] + dividendList[(current_year - 5)])/5) / PRECO) * 100
                 dy_medio_5anos = round(dy_medio_5anos, 2)
             except Exception:
-                print(f"Error calculating average dividend yield for {TICKER}")
                 dy_medio_5anos = ''
 
             dy = {}
@@ -268,7 +265,6 @@ def scrape_stock(row):
                     dividendyield = None
                 dy[year] = dividendyield
         except Exception:
-            print(f"Error calculating dividend yields for {TICKER}")
             dy_medio_5anos = ''
             dy = {}
 
@@ -283,11 +279,10 @@ def scrape_stock(row):
             jsonData = json.loads(jsonData)
 
             years = [int(year) for year in jsonData['chart']['category']]
-            annualLiquidity = [item['value'] for item in jsonData['chart']['series']['lucroLiquido']]
+            annualLiquidity = [float(item['value']) for item in jsonData['chart']['series']['lucroLiquido']]
             annualLiquidity = dict(zip(years, annualLiquidity))
 
         except Exception:
-            print(f"Error scraping stock data for {TICKER}")
             annualLiquidity = {}
 
         # Create stock dictionary
@@ -355,6 +350,14 @@ def scrape_stock(row):
 # Test Selenium WebDriver
 driver.get('http://github.com')
 print(driver.title)
+
+# Remove the existing CSV file if it exists
+if os.path.isfile(download_folder + '/statusinvest-busca-avancada.csv'):
+    os.remove(download_folder + '/statusinvest-busca-avancada.csv')
+
+# Remove the existing jsonl file if it exists
+if os.path.isfile(download_folder + '/stocks_data.jsonl'):
+    os.remove(download_folder + '/stocks_data.jsonl')
 
 # Set up the download folder
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -537,28 +540,28 @@ for stock in results:
         v = stock.get(key, None)
         if isinstance(v, str) and v.strip() == '':
             v = None
-        if key not in ['ticker', 'setor', 'subsetor', 'segmento', 'tag_along', 'scrape_time'] and v is not None:
+        if key not in ['ticker', 'setor', 'subsetor', 'segmento', 'scrape_time'] and v is not None:
             try:
                 v = float(v)
             except Exception:
                 v = None
         row.append(v)
-    to_insert.append(tuple(row))
-sql = f"""
-    INSERT INTO stocks ({', '.join(fields)})
-    VALUES ({', '.join(['%s'] * len(fields))})
-"""
-cursor.executemany(sql, to_insert)
+    try:
+        # Try to insert this row individually for better error reporting
+        sql = f"""
+            INSERT INTO stocks ({', '.join(fields)})
+            VALUES ({', '.join(['%s'] * len(fields))})
+        """
+        cursor.execute(sql, tuple(row))
+    except Exception as e:
+        print(f"Error inserting stock {stock.get('ticker', '')}: {e}")
+        print("Row data:", row)
+        import traceback
+        traceback.print_exc()
+        continue
+
 conn.commit()
 cursor.close()
 conn.close()
-
-# Remove the existing CSV file if it exists
-if os.path.isfile(download_folder + '/statusinvest-busca-avancada.csv'):
-    os.remove(download_folder + '/statusinvest-busca-avancada.csv')
-
-# Remove the existing jsonl file if it exists
-if os.path.isfile(download_folder + '/stocks_data.jsonl'):
-    os.remove(download_folder + '/stocks_data.jsonl')
 
 print(f"\nTotal execution time: {time.time() - start_time:.2f} seconds")
