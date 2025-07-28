@@ -362,6 +362,7 @@ if os.path.isfile(download_folder + '/stocks_data.jsonl'):
     os.remove(download_folder + '/stocks_data.jsonl')
 
 # Download the CSV file
+print(f"Downloading CSV file to {download_folder}")
 driver.get(csvUrl)
 
 # Wait for the CSV file to be downloaded
