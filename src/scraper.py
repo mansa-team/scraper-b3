@@ -39,7 +39,7 @@ csvUrlTest = 'https://statusinvest.com.br/category/AdvancedSearchResultExport?se
 # Setup Selenium WebDriver
 #
 
-chromedriver_autoinstaller.install()
+#chromedriver_autoinstaller.install()
 
 options = webdriver.ChromeOptions()
 
@@ -56,8 +56,8 @@ options.add_experimental_option("prefs", prefs)
 options.add_argument('--headless=new')
 options.add_argument('--no-sandbox')
 options.add_argument('--disable-dev-shm-usage')
-#options.add_argument('user-agent=VALID_USER_AGENT')
-options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36")
+options.add_argument('user-agent=VALID_USER_AGENT')
+#options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36")
 
 options.add_argument('--disable-logging')
 options.add_argument('--log-level=3')
@@ -103,8 +103,8 @@ def scrape_stock(row):
     options.add_argument('--headless=new')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
-    #options.add_argument('user-agent=VALID_USER_AGENT')
-    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36")
+    options.add_argument('user-agent=VALID_USER_AGENT')
+    #options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36")
     
     options.add_extension(os.path.join(script_dir, 'data/ublock.crx'))
 
