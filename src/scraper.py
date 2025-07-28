@@ -10,13 +10,9 @@ import selenium
 import mysql.connector
 import chromedriver_autoinstaller
 
-from pyvirtualdisplay import Display
 from time import sleep
 from datetime import datetime
 from selenium import webdriver
-
-display = Display(visible=0, size=(800, 800))  
-display.start()
 
 # Configs
 

@@ -30,9 +30,8 @@ jobs:
         apt list --installed
         sudo apt purge google-chrome-stable
 
-    - name: Install Python dependencies and xvfb
+    - name: Install Python dependencies
       run: |
-        sudo apt-get install xvfb
         pip install --upgrade pip
         pip install -r requirements.txt
 
