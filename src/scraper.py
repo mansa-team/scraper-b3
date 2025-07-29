@@ -387,7 +387,12 @@ os.makedirs(download_folder, exist_ok=True)
 # Download the CSV file
 print(f"Downloading CSV file to {download_folder}")
 driver.get(csvUrlTest)
-print(driver.page_source)
+print(driver.title)
+
+while driver.title == 'Just a moment...':
+    print('Detected Cloudflare protection, retrying download...')
+    driver.get(csvUrlTest)
+    print(driver.title)
 
 # Wait for the CSV file to be downloaded
 timeout = 15  # seconds
