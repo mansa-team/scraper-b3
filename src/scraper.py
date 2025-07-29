@@ -368,7 +368,6 @@ def scrape_stock(row):
         driver.quit()
 
 # Test Selenium WebDriver
-base = Driver(uc=True)
 driver.get('http://github.com')
 print(driver.title)
 
@@ -388,6 +387,7 @@ os.makedirs(download_folder, exist_ok=True)
 # Download the CSV file
 print(f"Downloading CSV file to {download_folder}")
 driver.get(csvUrlTest)
+print(driver.page_source)
 
 # Wait for the CSV file to be downloaded
 timeout = 15  # seconds
