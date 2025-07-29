@@ -1,5 +1,5 @@
 selenium==4.34.2
-chromedriver-autoinstaller==0.6.4
-webdriver_manager==4.0.2
-mysql-connector-python==9.4.0
+seleniumbase==4.40.6
+selenium-stealth==1.0.6
+pymysql==1.1.1
 python-dotenv==1.1.1

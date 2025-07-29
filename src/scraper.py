@@ -7,13 +7,18 @@ import concurrent.futures
 import re
 
 import selenium
-import mysql.connector
+import seleniumbase
+from selenium_stealth import stealth
+
+import pymysql
 import chromedriver_autoinstaller
+
+from selenium import webdriver
+from seleniumbase import Driver
 
 from dotenv import load_dotenv
 from time import sleep
 from datetime import datetime
-from selenium import webdriver
 
 # Configs
 
@@ -59,7 +64,6 @@ options.add_argument('--headless=new')
 options.add_argument('--no-sandbox')
 options.add_argument('--disable-dev-shm-usage')
 options.add_argument('user-agent=VALID_USER_AGENT')
-#options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36")
 
 options.add_argument('--disable-logging')
 options.add_argument('--log-level=3')
@@ -69,8 +73,16 @@ options.add_extension(os.path.join(script_dir, 'data/ublock.crx'))
 
 driver = webdriver.Chrome(
     options=options
-    )
+)
 
+stealth(driver,
+        languages=["en-US", "en"],
+        vendor="Google Inc.",
+        platform="Win32",
+        webgl_vendor="Intel Inc.",
+        renderer="Intel Iris OpenGL Engine",
+        fix_hairline=True,
+)
 
 #
 # Util
@@ -105,16 +117,24 @@ def scrape_stock(row):
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('user-agent=VALID_USER_AGENT')
-    #options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36")
-    
-    options.add_extension(os.path.join(script_dir, 'data/ublock.crx'))
 
     options.add_argument('--disable-logging')
     options.add_argument('--log-level=3')
     options.add_argument('--silent')
 
+    options.add_extension(os.path.join(script_dir, 'data/ublock.crx'))
+
     driver = webdriver.Chrome(
-    options=options
+        options=options
+    )
+
+    stealth(driver,
+            languages=["en-US", "en"],
+            vendor="Google Inc.",
+            platform="Win32",
+            webgl_vendor="Intel Inc.",
+            renderer="Intel Iris OpenGL Engine",
+            fix_hairline=True,
     )
 
     try:
@@ -297,7 +317,7 @@ def scrape_stock(row):
             'rent_media_5_anos': rentMedia5anos,
             'tag_along': tagAlong,
             'dy_12_meses': DY_12_MESES,
-            'dy_medio_5anos': dy_medio_5anos,
+            'dy_medio_5_anos': dy_medio_5anos,
             'p_l': P_L,
             'p_vp': P_VP,
             'p_ativos': P_ATIVOS,
@@ -348,6 +368,7 @@ def scrape_stock(row):
         driver.quit()
 
 # Test Selenium WebDriver
+base = Driver(uc=True)
 driver.get('http://github.com')
 print(driver.title)
 
@@ -366,7 +387,7 @@ os.makedirs(download_folder, exist_ok=True)
 
 # Download the CSV file
 print(f"Downloading CSV file to {download_folder}")
-driver.get(csvUrl)
+driver.get(csvUrlTest)
 
 # Wait for the CSV file to be downloaded
 timeout = 15  # seconds
@@ -410,7 +431,14 @@ mysql_config = {
     'database': os.getenv('MYSQL_DATABASE') or os.environ.get('MYSQL_DATABASE')
 }
 
-conn = mysql.connector.connect(**mysql_config)
+conn = pymysql.connect(
+    host=mysql_config['host'],
+    user=mysql_config['user'],
+    password=mysql_config['password'],
+    database=mysql_config['database'],
+    charset='utf8mb4',
+    autocommit=False
+)
 cursor = conn.cursor()
 
 # Collect all years for dividendos, dy, and annualLiquidity before CREATE TABLE
@@ -432,7 +460,7 @@ for stock in results:
             all_annualLiquidity_years.add(year)
 fields = [
     'scrape_time', 'ticker', 'setor', 'subsetor', 'segmento', 'preco', 'rent_12meses', 'rent_media_5_anos',
-    'tag_along', 'dy_12_meses', 'dy_medio_5anos', 'p_l', 'p_vp', 'p_ativos', 'margem_bruta', 'margem_ebit',
+    'tag_along', 'dy_12_meses', 'dy_medio_5_anos', 'p_l', 'p_vp', 'p_ativos', 'margem_bruta', 'margem_ebit',
     'marg_liquida', 'p_ebit', 'ev_ebit', 'divida_liquida_ebit', 'div_liq_patri', 'psr', 'p_cap_giro',
     'p_at_cir_liq', 'liq_corrente', 'roe', 'roa', 'roic', 'patrimonio_ativos', 'passivos_ativos', 'giro_ativos',
     'cagr_receitas_5_anos', 'cagr_lucros_5_anos', 'liquidez_media_diaria', 'vpa', 'lpa', 'peg_ratio',
@@ -476,7 +504,7 @@ CREATE TABLE IF NOT EXISTS stocks (
     rent_media_5_anos FLOAT,
     tag_along VARCHAR(16),
     dy_12_meses FLOAT,
-    dy_medio_5anos FLOAT,
+    dy_medio_5_anos FLOAT,
     p_l FLOAT,
     p_vp FLOAT,
     p_ativos FLOAT,

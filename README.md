@@ -9,6 +9,7 @@ A Python pipeline to collect, process, and store Brazilian stock market (B3) dat
 - Cleans and normalizes data
 - Stores results in JSONL and MySQL
 - Adds scrape timestamp for each record
+- Handles dynamic columns for annual liquidity and dividend yields per year
 
 ## Requirements
 - Python 3.10+
@@ -34,7 +35,7 @@ A Python pipeline to collect, process, and store Brazilian stock market (B3) dat
 
 ## Output
 - JSONL: `cache/stocks_data.jsonl`
-- MySQL: Table `stocks` with 40+ metrics
+- MySQL: Table `stocks` with 40+ metrics and dynamic columns for each year (e.g., `dividendos_2023`, `dy_2023`, `annualLiquidity_2023`)
 
 ## Example Record
 ```json
@@ -45,6 +46,9 @@ A Python pipeline to collect, process, and store Brazilian stock market (B3) dat
   "setor": "Petróleo, Gás e Biocombustíveis",
   "rent_1_ano": 28.5,
   "tag_along": 100,
+  "annualLiquidity_2023": 123456789.0,
+  "dividendos_2023": 2.34,
+  "dy_2023": 7.89,
   "scrape_time": "2023-11-15 10:30:00"
 }
 ```

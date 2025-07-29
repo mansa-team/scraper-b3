@@ -25,10 +25,11 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Purge previous Chrome installs
-      run: |
-        apt list --installed
-        sudo apt purge google-chrome-stable
+    - name: Install ChromeDriver
+      uses: browser-actions/setup-chrome@v2
+      with:
+          chrome-version: 138
+          install-chromedriver: true
 
     - name: Install Python dependencies
       run: |
