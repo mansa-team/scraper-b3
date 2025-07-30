@@ -55,7 +55,6 @@ prefs = {
     "download.prompt_for_download": False,
     "download.directory_upgrade": True,
     "profile.managed_default_content_settings.images": 2,
-    "profile.default_content_setting_values.javascript": 2,
     "safebrowsing.enabled": False
 }
 
@@ -371,6 +370,14 @@ def scrape_stock(row):
 driver.get('http://github.com')
 print(driver.title)
 
+# Test Cloudflare Status in StatusInvest
+driver.get('https://statusinvest.com.br/')
+print(f'StatusInvest: {driver.title}')
+
+# Test Cloudflare Status in TradingView
+driver.get('https://br.tradingview.com')
+print(f'TradingView: {driver.title}')
+
 # Remove the existing CSV file if it exists
 if os.path.isfile(download_folder + '/statusinvest-busca-avancada.csv'):
     os.remove(download_folder + '/statusinvest-busca-avancada.csv')
@@ -389,10 +396,12 @@ print(f"Downloading CSV file to {download_folder}")
 driver.get(csvUrlTest)
 print(driver.title)
 
-while driver.title == 'Just a moment...':
-    print('Detected Cloudflare protection, retrying download...')
-    driver.get(csvUrlTest)
-    print(driver.title)
+#
+#for i in range(4):
+    #if driver.title == 'Just a moment...':
+        #print('Detected Cloudflare protection, retrying download...')
+        #driver.get(csvUrlTest)
+        #print(driver.title)
 
 # Wait for the CSV file to be downloaded
 timeout = 15  # seconds

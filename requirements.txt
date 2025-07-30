@@ -2,5 +2,6 @@ selenium==4.34.2
 seleniumbase==4.40.6
 selenium-stealth==1.0.6
 chromedriver_autoinstaller==0.6.4
+pyautogui==0.9.54
 pymysql==1.1.1
 python-dotenv==1.1.1
