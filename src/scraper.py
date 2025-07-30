@@ -393,10 +393,9 @@ os.makedirs(download_folder, exist_ok=True)
 
 # Download the CSV file
 print(f"Downloading CSV file to {download_folder}")
-driver.get(csvUrlTest)
+driver.get(csvUrl)
 print(driver.title)
 
-#
 #for i in range(4):
     #if driver.title == 'Just a moment...':
         #print('Detected Cloudflare protection, retrying download...')
