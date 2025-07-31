@@ -22,7 +22,7 @@ from datetime import datetime
 
 # Configs
 
-max_workers = 6
+max_workers = 4
 
 start_time = time.time()
 current_year = datetime.now().year
@@ -395,12 +395,6 @@ os.makedirs(download_folder, exist_ok=True)
 print(f"Downloading CSV file to {download_folder}")
 driver.get(csvUrl)
 print(driver.title)
-
-#for i in range(4):
-    #if driver.title == 'Just a moment...':
-        #print('Detected Cloudflare protection, retrying download...')
-        #driver.get(csvUrlTest)
-        #print(driver.title)
 
 # Wait for the CSV file to be downloaded
 timeout = 15  # seconds
