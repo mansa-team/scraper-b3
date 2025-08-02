@@ -28,8 +28,19 @@ jobs:
     - name: Install ChromeDriver
       uses: browser-actions/setup-chrome@v2
       with:
-          chrome-version: 138
           install-chromedriver: true
+    - name: Install OpenVPN
+      run: |
+        sudo apt update
+        sudo apt install -y openvpn openvpn-systemd-resolved
+
+        echo "${{ secrets.OPENVPN_CONFIG }}" > config.ovpn
+        
+    - name: Connect to VPN
+      uses: "kota65535/github-openvpn-connect-action@v3.1.0"
+      with:
+        config_file: config.ovpn
+        password: ${{ secrets.OPENVPN_PASSWORD }}
 
     - name: Install Python dependencies
       run: |
