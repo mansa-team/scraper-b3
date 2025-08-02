@@ -28,49 +28,19 @@ jobs:
     - name: Install ChromeDriver
       uses: browser-actions/setup-chrome@v2
       with:
-        install-chromedriver: true
-
+          install-chromedriver: true
     - name: Install OpenVPN
       run: |
         sudo apt update
-        sudo apt install -y openvpn
-        
-        # Write config file
+        sudo apt install -y openvpn openvpn-systemd-resolved
+
         echo "${{ secrets.OPENVPN_CONFIG }}" > config.ovpn
         
-        # Create password file
-        echo "${{ secrets.OPENVPN_PASSWORD }}" > pass.txt
-        chmod 600 config.ovpn pass.txt
-
-    - name: Connect to VPN with logging
-      run: |
-        sudo openvpn \
-          --config config.ovpn \
-          --auth-user-pass pass.txt \
-          --daemon \
-          --log openvpn.log \
-          --writepid openvpn.pid
-        
-        echo "Waiting for VPN connection..."
-        for i in {1..30}; do
-          if grep -q "Initialization Sequence Completed" openvpn.log; then
-            echo "VPN connection established!"
-            break
-          fi
-          sleep 1
-        done
-        
-        if ! grep -q "Initialization Sequence Completed" openvpn.log; then
-          echo "❌ VPN failed to connect within 30 seconds"
-          echo "=== OpenVPN Log ==="
-          cat openvpn.log
-          exit 1
-        fi
-        
-        # Verify public IP
-        echo "Current public IP:"
-        curl --max-time 5 ifconfig.me
-        echo -e "\nVPN setup complete"
+    - name: Connect to VPN
+      uses: "kota65535/github-openvpn-connect-action@v3.1.0"
+      with:
+        config_file: config.ovpn
+        password: ${{ secrets.OPENVPN_PASSWORD }}
 
     - name: Install Python dependencies
       run: |
@@ -80,11 +50,3 @@ jobs:
     - name: Run scraper
       run: |
         python src/scraper.py
-
-    - name: Terminate OpenVPN
-      if: always()
-      run: |
-        if [ -f openvpn.pid ]; then
-          sudo kill $(cat openvpn.pid) || echo "OpenVPN already stopped"
-        fi
-        rm -f config.ovpn pass.txt openvpn.log openvpn.pid
