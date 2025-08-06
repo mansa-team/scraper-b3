@@ -1,13 +1,13 @@
-# B3 Scraper
+# Scraper B3
 
 A Python pipeline to collect, process, and store Brazilian stock market (B3) data from StatusInvest and TradingView. Built for research and educational purposes.
 
 ## Features
 - Scrapes 50+ financial metrics from StatusInvest and TradingView
-- Gets sector, sub-sector, and segment info
+- Gets sector, sub-sector, and segment information
 - Captures tag along rights and historical returns
-- Cleans and normalizes data
-- Stores results in JSONL and MySQL
+- Cleans and normalizes data automatically
+- Stores results in JSONL and MySQL formats
 - Adds scrape timestamp for each record
 - Handles dynamic columns for annual liquidity and dividend yields per year
 
@@ -16,22 +16,19 @@ A Python pipeline to collect, process, and store Brazilian stock market (B3) dat
 - MySQL Server 8.0+
 - Python packages: `selenium`, `mysql-connector-python`, `webdriver-manager`
 
-## Quick Start
-1. Clone the repo and install dependencies:
+## Setup
+1. Clone the repository and install dependencies:
    ```bash
-   git clone https://github.com/heitorrosa/scraperB3
-   cd scraperB3
+   git clone https://github.com/Placeholder-name-org/scraper-b3
+   cd scraper-b3
    pip install -r requirements.txt
    ```
-2. Set up MySQL:
+2. Set up MySQL database:
    ```sql
-   CREATE DATABASE b3;
+   CREATE DATABASE scraper-b3;
    ```
-   Edit `mysql_config` in the script with your credentials.
-3. Run the script:
-   ```bash
-   python scraper.py
-   ```
+3. Configure your MySQL credentials for the application
+4. Run the data collection pipeline
 
 ## Output
 - JSONL: `cache/stocks_data.jsonl`
