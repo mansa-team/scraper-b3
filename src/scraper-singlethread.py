@@ -14,7 +14,6 @@ from sqlalchemy import create_engine
 from sqlalchemy import types
 
 import threading
-import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import selenium
@@ -36,7 +35,6 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 #
 saveToMYSQL = True
 saveAsJSONL = True
-MAX_WORKERS = 6
 
 """
 Create a .env file in the root directory and put your user information for your MYSQL database like the following:
@@ -88,13 +86,6 @@ def setupSelenium():
     options.add_argument('--disable-gpu')
     options.add_argument('--enable-unsafe-swiftshader')
 
-    options.add_argument('--disable-features=VizDisplayComposito')
-    options.add_argument('--disable-extensions')
-    options.add_argument('--disable-web-security')
-    options.add_argument('--disable-plugins')
-    options.add_argument('--disable-features=TranslateUI')
-    options.add_argument('--disable-ipc-flooding-protection')
-
     options.add_argument('--log-level=3')
     options.add_argument('--disable-logging')
     options.add_argument('--silent')
@@ -120,12 +111,12 @@ def downloadCSVfile(url):
     driver.get(url)
     sleep(2)
 
-    b3StocksDF = pd.read_csv(csvFilePath, index_col="TICKER", sep=';', skipinitialspace=True, decimal=',', thousands='.')
+    stocksDataFrame = pd.read_csv(csvFilePath, index_col="TICKER", sep=';', skipinitialspace=True, decimal=',', thousands='.')
 
-    return b3StocksDF
+    return stocksDataFrame
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
-def getSectorsData(b3StocksDF):
+def getSectorsData(stocksDataFrame):
     stockSectorsURL = f'https://statusinvest.com.br/category/advancedsearchresultpaginated?search=%7B%22Sector%22%3A%22%22%2C%22SubSector%22%3A%22%22%2C%22Segment%22%3A%22%22%2C%22my_range%22%3A%22-20%3B100%22%2C%22forecast%22%3A%7B%22upsidedownside%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22estimatesnumber%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22revisedup%22%3Atrue%2C%22reviseddown%22%3Atrue%2C%22consensus%22%3A%5B%5D%7D%2C%22dy%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_l%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22peg_ratio%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_vp%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_ativo%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22margembruta%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22margemebit%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22margemliquida%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_ebit%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22ev_ebit%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22dividaliquidaebit%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22dividaliquidapatrimonioliquido%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_sr%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_capitalgiro%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_ativocirculante%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22roe%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22roic%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22roa%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22liquidezcorrente%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22pl_ativo%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22passivo_ativo%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22giroativos%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22receitas_cagr5%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22lucros_cagr5%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22liquidezmediadiaria%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22vpa%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22lpa%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22valormercado%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%7D&orderColumn=&isAsc=&page=0&take=611&CategoryType=1'
         
     driver.implicitly_wait(10)
@@ -137,12 +128,12 @@ def getSectorsData(b3StocksDF):
     sectorsDataFrame.rename(columns={'ticker': 'TICKER', 'sectorname': 'SETOR', 'subsectorname': 'SUBSETOR', 'segmentname': 'SEGMENTO'}, inplace=True)
     sectorsDataFrame.set_index('TICKER', inplace=True)
 
-    b3StocksDF = pd.merge(b3StocksDF, sectorsDataFrame[['SETOR', 'SUBSETOR', 'SEGMENTO']], on='TICKER')
+    stocksDataFrame = pd.merge(stocksDataFrame, sectorsDataFrame[['SETOR', 'SUBSETOR', 'SEGMENTO']], on='TICKER')
     
-    return b3StocksDF
+    return stocksDataFrame
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
-def getTAGAlong(TICKER, driver):
+def getTAGAlong(TICKER, stocksDataFrame):
     statusInvestURL = f'https://statusinvest.com.br/acoes/{TICKER}'
  
     driver.implicitly_wait(10)
@@ -157,10 +148,12 @@ def getTAGAlong(TICKER, driver):
     if tagAlong == '--':
         tagAlong = np.nan
 
-    return int(tagAlong)
+    stocksDataFrame.at[TICKER, 'TAG ALONG'] = int(tagAlong)
+
+    return stocksDataFrame
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
-def getHistoricalRent(TICKER, driver):
+def getHistoricalRent(TICKER, stocksDataFrame):
     tradingViewURL = f'https://scanner.tradingview.com/symbol?symbol=BMFBOVESPA%3A{TICKER}&fields=change%2CPerf.5D%2CPerf.W%2CPerf.1M%2CPerf.6M%2CPerf.YTD%2CPerf.Y%2CPerf.5Y%2CPerf.All&no_404=true&label-product=symbols-performance'
 
     driver.implicitly_wait(10)
@@ -175,26 +168,28 @@ def getHistoricalRent(TICKER, driver):
     histRentDataFrame['TICKER'] = TICKER
     histRentDataFrame.set_index('TICKER', inplace=True)
 
-    return histRentDataFrame
+    for row in histRentDataFrame.columns:        
+        stocksDataFrame.at[TICKER, row] = histRentDataFrame.at[TICKER, row]
+
+    return stocksDataFrame
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
-def getHistoricalDividends(TICKER, driver):
-    historicalDividendsURL = f'https://statusinvest.com.br/acao/companytickerprovents?companyName=&ticker={TICKER}&chartProventsType=2'
+def getHistoricalDividends(TICKER, stocksDataFrame):
+    dividendYeildsURL = f'https://statusinvest.com.br/acao/companytickerprovents?companyName=&ticker={TICKER}&chartProventsType=2'
 
     driver.implicitly_wait(10)
-    driver.get(historicalDividendsURL)
+    driver.get(dividendYeildsURL)
 
-    divivdendsJSON = json.loads(driver.find_element('xpath', '/html/body/pre').text)
-    divivdendsJSON = pd.json_normalize(divivdendsJSON, record_path='assetEarningsYearlyModels', sep='')
+    yeildsJSON = json.loads(driver.find_element('xpath', '/html/body/pre').text)
+    yeildsJSON = pd.json_normalize(yeildsJSON, record_path='assetEarningsYearlyModels', sep='')
 
-    dividends_Data = {}
-    for row in divivdendsJSON.itertuples():
-        dividends_Data[f'DIVIDENDOS {row.rank}'] = row.value
+    for row in yeildsJSON.itertuples():
+        stocksDataFrame.at[TICKER, f'DIVIDENDOS {row.rank}'] = row.value
 
-    return dividends_Data
+    return stocksDataFrame
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
-def getHistoricalDY(TICKER, driver):
+def getHistoricalDY(TICKER, stocksDataFrame):
     driver.implicitly_wait(10)
     driver.get(f'https://statusinvest.com.br/acoes/{TICKER}')
     
@@ -213,20 +208,20 @@ def getHistoricalDY(TICKER, driver):
     .catch(error => callback(null));
     """
 
-    historicalData = driver.execute_async_script(script)
-    DividendYield_Data = historicalData['data'][TICKER.lower()]
+    histDataJSON = driver.execute_async_script(script)
+    DYDataFrame = histDataJSON['data'][TICKER.lower()]
 
-    for indicator in DividendYield_Data:
+    for indicator in DYDataFrame:
         if indicator['key'] == 'dy':
-            DividendYield_Data = pd.json_normalize(indicator['ranks'])
+            DYDataFrame = pd.json_normalize(indicator['ranks'])
 
-    for row in DividendYield_Data.itertuples():
-        DividendYield_Data.at[f'DY {row.rank}'] = row.value
+    for row in DYDataFrame.itertuples():
+        stocksDataFrame.at[TICKER, f'DY {row.rank}'] = row.value
 
-    return DividendYield_Data
+    return stocksDataFrame
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
-def getHistoricalRevenue(TICKER, driver):
+def getHistoricalRevenue(TICKER, stocksDataFrame):
     historicalRevenueURL = f'https://statusinvest.com.br/acao/getrevenue?code={TICKER}&type=2&viewType=0'
 
     driver.implicitly_wait(10)
@@ -235,110 +230,86 @@ def getHistoricalRevenue(TICKER, driver):
     revenueJSON = json.loads(driver.find_element('xpath', '/html/body/pre').text)
     revenueJSON = pd.json_normalize(revenueJSON, sep=',')
 
-    revenue_Data = {}
+    revenueDF = {}
     for row in revenueJSON.itertuples():
-        revenue_Data[f'RECEITA LIQUIDA {row.year}'] = row.receitaLiquida
-        revenue_Data[f'DESPESAS {row.year}'] = row.despesas
-        revenue_Data[f'LUCRO LIQUIDO {row.year}'] = row.lucroLiquido
-        revenue_Data[f'MARGEM BRUTA {row.year}'] = row.margemBruta
-        revenue_Data[f'MARGEM EBITDA {row.year}'] = row.margemEbitda
-        revenue_Data[f'MARGEM EBIT {row.year}'] = row.margemEbit
-        revenue_Data[f'MARGEM LIQUIDA {row.year}'] = row.margemLiquida
+        revenueDF[f'RECEITA LIQUIDA {row.year}'] = row.receitaLiquida
+        revenueDF[f'DESPESAS {row.year}'] = row.despesas
+        revenueDF[f'LUCRO LIQUIDO {row.year}'] = row.lucroLiquido
+        revenueDF[f'MARGEM BRUTA {row.year}'] = row.margemBruta
+        revenueDF[f'MARGEM EBITDA {row.year}'] = row.margemEbitda
+        revenueDF[f'MARGEM EBIT {row.year}'] = row.margemEbit
+        revenueDF[f'MARGEM LIQUIDA {row.year}'] = row.margemLiquida
 
-    return revenue_Data
+    revenueDF = pd.DataFrame(revenueDF, index=[TICKER])
+
+    stocksDataFrame = stocksDataFrame.combine_first(revenueDF)
+
+    return stocksDataFrame
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=10))
-def calcFundamentalistIndicators(ticker_data, ticker):
-    indicators = {}
-    
+def calcFundamentalistIndicators(TICKER, stocksDataFrame):
     # EBIT
     try:
-        margin_ebit = ticker_data.get(f'MARGEM EBIT {current_year - 1}')
-        receita = ticker_data.get(f'RECEITA LIQUIDA {current_year - 1}')
-        if margin_ebit is not None and receita is not None:
-            indicators['EBIT'] = margin_ebit * receita / 100
-        else:
-            indicators['EBIT'] = np.nan
+        stocksDataFrame.at[TICKER, 'EBIT'] = stocksDataFrame.loc[TICKER, f'MARGEM EBIT {current_year - 1}'] * stocksDataFrame.loc[TICKER, f'RECEITA LIQUIDA {current_year - 1}'] / 100
     except (KeyError, ZeroDivisionError, TypeError):
-        indicators['EBIT'] = np.nan
+        stocksDataFrame.at[TICKER, 'EBIT'] = np.nan
 
     # Average Dividend Yields over 5 years
     try:
-        dy_values = []
-        for year in range(current_year - 5, current_year):
-            dy_key = f'DY {year}'
-            if dy_key in ticker_data and ticker_data[dy_key] is not None:
-                dy_values.append(ticker_data[dy_key])
-        
-        indicators['DY MEDIO 5 ANOS'] = sum(dy_values) / len(dy_values) if dy_values else np.nan
+        DY5Years = sum(stocksDataFrame.loc[TICKER, f'DY {year}'] for year in range(current_year - 5, current_year) if f'DY {year}' in stocksDataFrame.columns)
+        stocksDataFrame.at[TICKER, 'DY MEDIO 5 ANOS'] = DY5Years / 5 if DY5Years else np.nan
     except (KeyError, ZeroDivisionError, TypeError):
-        indicators['DY MEDIO 5 ANOS'] = np.nan
+        stocksDataFrame.at[TICKER, 'DY MEDIO 5 ANOS'] = np.nan
 
     # Average Rentability over 5 years
     try:
-        rent_5_anos = ticker_data.get('RENT 5 ANOS')
-        indicators['RENT MEDIA 5 ANOS'] = rent_5_anos / 5 if rent_5_anos is not None else np.nan
+        stocksDataFrame.at[TICKER, 'RENT MEDIA 5 ANOS'] = stocksDataFrame.loc[TICKER, 'RENT 5 ANOS'] / 5
     except (KeyError, ZeroDivisionError, TypeError):
-        indicators['RENT MEDIA 5 ANOS'] = np.nan
+        stocksDataFrame.at[TICKER, 'RENT MEDIA 5 ANOS'] = np.nan
 
     # Average Net Income over 5 years
     try:
-        net_income_values = []
-        for year in range(current_year - 5, current_year):
-            income_key = f'LUCRO LIQUIDO {year}'
-            if income_key in ticker_data and ticker_data[income_key] is not None:
-                net_income_values.append(ticker_data[income_key])
-        
-        indicators['LUCRO LIQUIDO MEDIO 5 ANOS'] = sum(net_income_values) / len(net_income_values) if net_income_values else np.nan
+        NetIncome5Years = sum(stocksDataFrame.loc[TICKER, f'LUCRO LIQUIDO {year}'] for year in range(current_year - 5, current_year) if f'LUCRO LIQUIDO {year}' in stocksDataFrame.columns)
+        stocksDataFrame.at[TICKER, 'LUCRO LIQUIDO MEDIO 5 ANOS'] = NetIncome5Years / 5 if NetIncome5Years else np.nan
     except (KeyError, ZeroDivisionError, TypeError):
-        indicators['LUCRO LIQUIDO MEDIO 5 ANOS'] = np.nan
+        stocksDataFrame.at[TICKER, 'LUCRO LIQUIDO MEDIO 5 ANOS'] = np.nan
 
     # CAGR Dividends over 5 years
     try:
-        div_start = ticker_data.get(f'DIVIDENDOS {current_year - 6}')
-        div_end = ticker_data.get(f'DIVIDENDOS {current_year - 1}')
-        if div_start and div_start != 0 and div_end:
-            indicators['CAGR DIVIDENDOS 5 ANOS'] = ((div_end / div_start) ** (1/5) - 1) * 100
-        else:
-            indicators['CAGR DIVIDENDOS 5 ANOS'] = np.nan
+        div_start = stocksDataFrame.loc[TICKER, f'DIVIDENDOS {current_year - 6}']
+        div_end = stocksDataFrame.loc[TICKER, f'DIVIDENDOS {current_year - 1}']
+        stocksDataFrame.at[TICKER, 'CAGR DIVIDENDOS 5 ANOS'] = ((div_end / div_start) ** (1/5) - 1) * 100 if div_start and div_start != 0 else np.nan
     except (KeyError, ZeroDivisionError, TypeError):
-        indicators['CAGR DIVIDENDOS 5 ANOS'] = np.nan
+        stocksDataFrame.at[TICKER, 'CAGR DIVIDENDOS 5 ANOS'] = np.nan
 
     # Sustainable Growth Rate (SGR)
     try:
-        roe = ticker_data.get('ROE')
-        div_yr = ticker_data.get(f'DIVIDENDOS {current_year - 1}')
-        net_yr = ticker_data.get(f'LUCRO LIQUIDO {current_year - 1}')
-        if roe is not None and div_yr is not None and net_yr is not None and net_yr != 0:
-            indicators['SGR'] = roe * (1 - div_yr / net_yr)
-        else:
-            indicators['SGR'] = np.nan
+        roe = stocksDataFrame.loc[TICKER, 'ROE']
+        div_yr = stocksDataFrame.loc[TICKER, f'DIVIDENDOS {current_year - 1}']
+        net_yr = stocksDataFrame.loc[TICKER, f'LUCRO LIQUIDO {current_year - 1}']
+        stocksDataFrame.at[TICKER, 'SGR'] = roe * (1 - div_yr / net_yr) if net_yr and net_yr != 0 else np.nan
     except (KeyError, ZeroDivisionError, TypeError):
-        indicators['SGR'] = np.nan
+        stocksDataFrame.at[TICKER, 'SGR'] = np.nan
 
     # Graham's Top Price
     try:
-        lpa = ticker_data.get('LPA')
-        vpa = ticker_data.get('VPA')
-        if lpa and lpa > 0 and vpa and vpa > 0:
-            indicators['PRECO DE GRAHAM'] = math.sqrt(22.5 * lpa * vpa)
-        else:
-            indicators['PRECO DE GRAHAM'] = np.nan
+        lpa = stocksDataFrame.loc[TICKER, 'LPA']
+        vpa = stocksDataFrame.loc[TICKER, 'VPA']
+        stocksDataFrame.at[TICKER, 'PRECO DE GRAHAM'] = math.sqrt(22.5 * lpa * vpa) if lpa > 0 and vpa > 0 else np.nan
     except (KeyError, ZeroDivisionError, TypeError, ValueError):
-        indicators['PRECO DE GRAHAM'] = np.nan
+        stocksDataFrame.at[TICKER, 'PRECO DE GRAHAM'] = np.nan
 
     # Bazin's Top Price
     try:
-        dy_avg = indicators.get('DY MEDIO 5 ANOS', ticker_data.get('DY MEDIO 5 ANOS'))
-        preco = ticker_data.get('PRECO')
-        if dy_avg and dy_avg != 0 and preco:
-            indicators['PRECO DE BAZIN'] = ((dy_avg / 100) * preco) / 0.06
-        else:
-            indicators['PRECO DE BAZIN'] = np.nan
+        dy_avg = stocksDataFrame.loc[TICKER, 'DY MEDIO 5 ANOS']
+        preco = stocksDataFrame.loc[TICKER, 'PRECO']
+        stocksDataFrame.at[TICKER, 'PRECO DE BAZIN'] = ((dy_avg / 100) * preco) / 0.06 if dy_avg and dy_avg != 0 else np.nan
     except (KeyError, ZeroDivisionError, TypeError):
-        indicators['PRECO DE BAZIN'] = np.nan
+        stocksDataFrame.at[TICKER, 'PRECO DE BAZIN'] = np.nan
 
-    return indicators
+    # Altman Z-Score
+        
+    return stocksDataFrame
 
 def normalize(df, order):
     columns = list(df.columns)
@@ -353,57 +324,6 @@ def normalize(df, order):
     return df[newOrder]
 
 #
-#$ Thread worker function
-#
-def process_stock(TICKER, base_stock_data):
-    """Process a single stock and return all collected data as a dictionary"""
-    driver = setupSelenium()
-    stock_data = base_stock_data.copy()
-    
-    try:
-        # Get TAG Along
-        try:
-            tag_along = getTAGAlong(TICKER, driver)
-            stock_data['TAG ALONG'] = tag_along
-        except Exception as e:
-            print(f'{TICKER} failed getTAGAlong: {e}')
-            stock_data['TAG ALONG'] = np.nan
-        
-        # Get Historical Rent
-        try:
-            rent_data = getHistoricalRent(TICKER, driver)
-            for col in rent_data.columns:
-                stock_data[col] = rent_data.at[TICKER, col]
-        except Exception as e:
-            print(f'{TICKER} failed getHistoricalRent: {e}')
-        
-        # Get Historical Dividends
-        try:
-            dividends = getHistoricalDividends(TICKER, driver)
-            stock_data.update(dividends)
-        except Exception as e:
-            print(f'{TICKER} failed getHistoricalDividends: {e}')
-        
-        # Get Historical DY
-        try:
-            dy_data = getHistoricalDY(TICKER, driver)
-            stock_data.update(dy_data)
-        except Exception as e:
-            print(f'{TICKER} failed getHistoricalDY: {e}')
-        
-        # Get Historical Revenue
-        try:
-            revenue_data = getHistoricalRevenue(TICKER, driver)
-            stock_data.update(revenue_data)
-        except Exception as e:
-            print(f'{TICKER} failed getHistoricalRevenue: {e}')
-            
-    finally:
-        driver.quit()
-    
-    return TICKER, stock_data
-
-#
 #$ Main Script Execution
 #
 if __name__ == "__main__":
@@ -416,74 +336,43 @@ if __name__ == "__main__":
                 os.remove(os.path.join(downloadFolder, name))
 
     # Setup the DataFrame
-    b3StocksDF = downloadCSVfile(csvFileURL)
-    b3StocksDF = getSectorsData(b3StocksDF)
-    b3StocksDF['TIME'] = dateScrape
+    stocksDataFrame = downloadCSVfile(csvFileURL)
+    stocksDataFrame = getSectorsData(stocksDataFrame)
+    stocksDataFrame['TIME'] = dateScrape
 
     driver.quit()
 
     #
     #$ Scrape items for each stock
     #
-    stocksList = b3StocksDF.index.tolist()
+    stocksList = stocksDataFrame.index.tolist()
 
-    # Store all collected data
-    all_stock_data = {}
-    
-    # Extract base data for each stock
-    for ticker in stocksList:
-        all_stock_data[ticker] = b3StocksDF.loc[ticker].to_dict()
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        future_to_ticker = {
-            executor.submit(process_stock, ticker, all_stock_data[ticker]): ticker 
-            for ticker in stocksList
-        }
-        
-        for future in concurrent.futures.as_completed(future_to_ticker):
-            ticker = future_to_ticker[future]
+    for TICKER in stocksList:
+        funcList = [getTAGAlong, getHistoricalRent, getHistoricalDividends, getHistoricalDY, getHistoricalRevenue, calcFundamentalistIndicators]
+        for function in funcList:
             try:
-                processed_ticker, processed_data = future.result()
-                all_stock_data[processed_ticker] = processed_data
+                stocksDataFrame = function(TICKER, stocksDataFrame)
             except Exception as e:
-                None
-
-    # Calculate fundamentalist indicators for each stock
-    for ticker in stocksList:
-        try:
-            indicators = calcFundamentalistIndicators(all_stock_data[ticker], ticker)
-            all_stock_data[ticker].update(indicators)
-        except Exception as e:
-            None
-
-    # Reconstruct DataFrame from collected data
-    final_data_list = []
-    for ticker, data in all_stock_data.items():
-        data['TICKER'] = ticker
-        final_data_list.append(data)
-    
-    # Create new DataFrame
-    b3StocksDF = pd.DataFrame(final_data_list)
-    b3StocksDF.set_index('TICKER', inplace=True)
+                print(f'{TICKER} failed {function}')
 
     #
     #$ Normalize and fix stuff
     #
-    b3StocksDF = b3StocksDF.round(2)
+    stocksDataFrame = stocksDataFrame.round(2)
 
     normalizedColumns = ['TIME', 'TICKER', 'SETOR', 'SUBSETOR', 'SEGMENTO', 'ALTMAN Z-SCORE', 'SGR', 'LIQUIDEZ MEDIA DIARIA', 'PRECO', 'PRECO DE BAZIN', 'PRECO DE GRAHAM', 'TAG ALONG', 'RENT 12 MESES', 'RENT MEDIA 5 ANOS', 'DY', 'DY MEDIO 5 ANOS', 'P/L', 'P/VP', 'P/ATIVOS', 'MARGEM BRUTA', 'MARGEM EBIT', 'MARG. LIQUIDA', 'EBIT', 'P/EBIT', 'EV/EBIT', 'DIVIDA LIQUIDA / EBIT', 'DIV. LIQ. / PATRI.', 'PSR', 'P/CAP. GIRO', 'P. AT CIR. LIQ.', 'LIQ. CORRENTE', 'LUCRO LIQUIDO MEDIO 5 ANOS', 'ROE', 'ROA', 'ROIC', 'PATRIMONIO / ATIVOS', 'PASSIVOS / ATIVOS', 'GIRO ATIVOS', 'CAGR DIVIDENDOS 5 ANOS', 'CAGR RECEITAS 5 ANOS', 'CAGR LUCROS 5 ANOS', 'VPA', 'LPA', 'PEG Ratio', 'VALOR DE MERCADO']
 
-    b3StocksDF.index.name = 'TICKER'
-    b3StocksDF = b3StocksDF.reset_index()
-    b3StocksDF = normalize(b3StocksDF, normalizedColumns)
+    stocksDataFrame.index.name = 'TICKER'
+    stocksDataFrame = stocksDataFrame.reset_index()
+    stocksDataFrame = normalize(stocksDataFrame, normalizedColumns)
 
     #
     #$ Exports
     #
     if saveAsJSONL:
-        b3StocksDF.to_json(f'b3_stocks.json', orient='records', indent=4)
+        stocksDataFrame.to_json(f'b3_stocks.json', orient='records', indent=4)
 
     if saveToMYSQL:
-        b3StocksDF.to_sql('b3_stocks', con=engine, if_exists='append', index=False)
+        stocksDataFrame.to_sql('b3_stocks', con=engine, if_exists='append', index=False)
         
 print(f"\nTotal execution time: {time.time() - start_time:.2f} seconds")
