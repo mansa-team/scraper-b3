@@ -18,7 +18,6 @@ import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import selenium
-from selenium_stealth import stealth
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By

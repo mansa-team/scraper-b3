@@ -1,7 +1,7 @@
-selenium==4.34.2
-seleniumbase==4.40.6
-selenium-stealth==1.0.6
-chromedriver_autoinstaller==0.6.4
-pyautogui==0.9.54
-pymysql==1.1.1
+selenium==4.35.0
+pandas==2.3.2
+numpy==2.3.2
+SQLAlchemy==2.0.43
+PyMySQL==1.1.2
 python-dotenv==1.1.1
+tenacity==9.1.2
