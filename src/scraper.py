@@ -10,7 +10,7 @@ import pandas as pd
 import numpy as np
 
 import pymysql
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy import types
 
 import threading
@@ -103,11 +103,9 @@ def setupSelenium():
 #
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
 def downloadCSVfile(url):
-    # Setup download folders
     if not os.path.exists(downloadFolder):
         os.makedirs(downloadFolder)
 
-    # Download the CSV file from the csvFileURL
     driver.get(url)
     sleep(2)
 
@@ -339,12 +337,11 @@ def calcFundamentalistIndicators(TICKER, stockData):
 def process_stock(TICKER, stocksDataFrame):
     """Process a single stock and return updated stock data"""
     driver = setupSelenium()
-    
-    # Get initial stock data
+
     stock_data = stocksDataFrame.loc[TICKER].to_dict()
     
     try:
-        # Execute all functions sequentially
+
         funcList = [
             ('getTAGAlong', getTAGAlong),
             ('getHistoricalRent', getHistoricalRent), 
@@ -363,7 +360,6 @@ def process_stock(TICKER, stocksDataFrame):
             except Exception as e:
                 print(f'{TICKER} failed {func_name}: {e}')
         
-        # Calculate fundamentalist indicators
         stock_data = calcFundamentalistIndicators(TICKER, stock_data)
                 
     except Exception as e:
@@ -373,6 +369,9 @@ def process_stock(TICKER, stocksDataFrame):
     
     return TICKER, stock_data
 
+#
+#$ Normalize Function
+#
 def normalize(df, order):
     columns = list(df.columns)
 
@@ -391,13 +390,11 @@ def normalize(df, order):
 if __name__ == "__main__":
     driver = setupSelenium()
 
-    # Remove old files in the download directory
     if os.path.exists(downloadFolder):
         for root, dirs, files in os.walk(downloadFolder, topdown=False):
             for name in files:
                 os.remove(os.path.join(downloadFolder, name))
 
-    # Setup the DataFrame
     stocksDataFrame = downloadCSVfile(csvFileURL)
     stocksDataFrame = getSectorsData(stocksDataFrame)
     stocksDataFrame['TIME'] = dateScrape
@@ -408,6 +405,7 @@ if __name__ == "__main__":
     #$ Scrape items for each stock using ThreadPoolExecutor
     #
     stocksList = stocksDataFrame.index.tolist()
+    stocksList = stocksList[:10]
     results = {}
 
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
@@ -446,6 +444,17 @@ if __name__ == "__main__":
         stocksDataFrame.to_json(f'b3_stocks.json', orient='records', indent=4)
 
     if saveToMYSQL:
+        existingColumns = pd.read_sql("SELECT * FROM b3_stocks LIMIT 1", con=engine)
+        newColumns = set(stocksDataFrame.columns) - set(existingColumns.columns)
+
+        for col in newColumns:
+            colType = stocksDataFrame[col].dtype
+            with engine.connect() as conn:
+                colType = "TEXT" if stocksDataFrame[col].dtype == 'object' else "DOUBLE"
+                query = text(f"ALTER TABLE b3_stocks ADD COLUMN `{col}` {colType} NULL")
+                conn.execute(query)
+                conn.commit()
+
         stocksDataFrame.to_sql('b3_stocks', con=engine, if_exists='append', index=False)
         
 print(f"\nTotal execution time: {time.time() - start_time:.2f} seconds")

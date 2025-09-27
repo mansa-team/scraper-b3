@@ -1,17 +1,6 @@
 # Scraper B3
 
-A high-performance Python pipeline to collect, process, and store Brazilian stock market (B3) data from StatusInvest and TradingView. Built for research and educational purposes with multithreading support for faster data collection.
-
-## Features
-- **Comprehensive Data Collection**: Scrapes 50+ financial metrics from StatusInvest and TradingView
-- **Sector Information**: Gets sector, sub-sector, and segment classification
-- **Historical Analysis**: Captures tag along rights, historical returns, dividends, and dividend yields
-- **Performance Indicators**: Calculates fundamentalist indicators (Graham Price, Bazin Price, SGR, EBIT, etc.)
-- **Multithreading Support**: Parallel processing with configurable worker threads for faster execution
-- **Data Processing**: Cleans and normalizes data automatically with fragmentation-free operations
-- **Multiple Export Formats**: Stores results in JSONL and MySQL formats
-- **Timestamped Records**: Adds scrape timestamp for each record
-- **Dynamic Columns**: Handles annual data (liquidity, dividends, revenue) across multiple years
+A high-performance Python scraper to collect, process, and store Brazilian stock market (B3) data from StatusInvest and TradingView. Built for research to the AI models for the [Mansa](https://github.com/mansa-team) project.
 
 ## Requirements
 - Python 3.10+
@@ -88,25 +77,6 @@ MAX_WORKERS = 6         # Number of parallel threads (adjust based on your syste
   "LUCRO_LIQUIDO_2023": 123456789.0,
   "TIME": "2024-12-09 14:30:00"
 }
-```
-
-### MySQL Export
-Data is stored in the `b3_stocks` table with the same structure as JSON, automatically handling:
-- Data type conversion
-- NULL values for missing data
-- Timestamp indexing
-- Incremental updates
-
-## File Structure
-```
-scraper-b3/
-├── src/
-│   ├── scraper.py              # Main multithreaded script
-│   ├── scraper-singlethread.py # Single-threaded version
-│   └── cache/                  # Temporary download files
-├── .env                        # Database configuration
-├── requirements.txt            # Python dependencies
-└── README.md                   # This file
 ```
 
 ## License
