@@ -1,38 +1,12 @@
 #
 #$ Import Libraries
 #
-import os
-import math
-import json
-import time
-
-import pandas as pd
-import numpy as np
-
-import pymysql
-from sqlalchemy import create_engine, text
-from sqlalchemy import types
-
-import threading
-from concurrent.futures import ThreadPoolExecutor, as_completed
-
-import selenium
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-
-from dotenv import load_dotenv
-from time import sleep
-from datetime import datetime
-
-from tenacity import retry, stop_after_attempt, wait_exponential
+from imports import *
 
 #
 #$ Script Configuration and Basic Setup
 #
-saveToMYSQL = True
+saveToMYSQL = False
 saveAsJSONL = True
 MAX_WORKERS = 6
 
@@ -72,24 +46,58 @@ csvFileURL = f'https://statusinvest.com.br/category/AdvancedSearchResultExport?s
 def setupSelenium():
     options = webdriver.ChromeOptions()
 
-    advancedPrefs = {
-        "download.default_directory": downloadFolder,
-        "download.prompt_for_download": False,
-        "download.directory_upgrade": True,
-    }
-
     options.add_argument('user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.8191.896 Safari/537.36')
-    options.add_experimental_option("prefs", advancedPrefs)
     options.add_argument('--headless')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--disable-gpu')
-    options.add_argument('--enable-unsafe-swiftshader')
+    options.add_argument('--disable-software-rasterizer')
+    options.add_argument('--disable-extensions')
+    options.add_argument('--disable-plugins')
+    options.add_argument('--disable-images')
+    options.add_argument('--blink-settings=imagesEnabled=false')
+    options.add_argument('--disable-default-apps')
+    options.add_argument('--disable-sync')
+    options.add_argument('--disable-translate')
+    options.add_argument('--disable-breakpad')
+    options.add_argument('--disable-client-side-phishing-detection')
+    options.add_argument('--disable-component-extensions-with-background-pages')
+    options.add_argument('--disable-default-apps')
+    options.add_argument('--disable-hang-monitor')
+    options.add_argument('--disable-popup-blocking')
+    options.add_argument('--disable-prompt-on-repost')
+    options.add_argument('--disable-background-timer-throttling')
+    options.add_argument('--disable-backgrounding-occluded-windows')
+    options.add_argument('--disable-breakpad')
+    options.add_argument('--disable-client-side-phishing-detection')
+    options.add_argument('--disable-default-apps')
+    options.add_argument('--disable-device-discovery-notifications')
+    options.add_argument('--disable-hang-monitor')
+    options.add_argument('--disable-ipc-flooding-protection')
+    options.add_argument('--disable-popup-blocking')
+    options.add_argument('--disable-prompt-on-repost')
+    options.add_argument('--disable-renderer-backgrounding')
+    options.add_argument('--enable-features=NetworkService,NetworkServiceInProcess')
+    options.add_argument('--force-color-profile=srgb')
+    options.add_argument('--metrics-recording-only')
+    options.add_argument('--mute-audio')
+    options.add_argument('--no-default-browser-check')
+    options.add_argument('--no-first-run')
+    options.add_argument('--password-store=basic')
+    options.add_argument('--use-mock-volume-mount-config')
 
-    options.add_argument('--log-level=3')
-    options.add_argument('--disable-logging')
-    options.add_argument('--silent')
-    options.add_argument('--remote-debugging-port=0')
+    options.add_argument('--memory-pressure-off')
+    options.add_argument('--renderer-process-limit=1')
+
+    prefs = {
+        "download.default_directory": downloadFolder,
+        "download.prompt_for_download": False,
+        "download.directory_upgrade": True,
+        'profile.default_content_settings.popups': 0,
+        'profile.managed_default_content_settings.images': 2,
+        'profile.default_content_setting_values.notifications': 2,
+    }
+    options.add_experimental_option('prefs', prefs)
 
     driver = webdriver.Chrome(
         options=options,
@@ -109,12 +117,12 @@ def downloadCSVfile(url):
     driver.get(url)
     sleep(2)
 
-    stocksDataFrame = pd.read_csv(csvFilePath, index_col="TICKER", sep=';', skipinitialspace=True, decimal=',', thousands='.')
+    stocksData = pd.read_csv(csvFilePath, index_col="TICKER", sep=';', skipinitialspace=True, decimal=',', thousands='.')
 
-    return stocksDataFrame
+    return stocksData
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
-def getSectorsData(stocksDataFrame):
+def getSectorsData(stocksData):
     stockSectorsURL = f'https://statusinvest.com.br/category/advancedsearchresultpaginated?search=%7B%22Sector%22%3A%22%22%2C%22SubSector%22%3A%22%22%2C%22Segment%22%3A%22%22%2C%22my_range%22%3A%22-20%3B100%22%2C%22forecast%22%3A%7B%22upsidedownside%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22estimatesnumber%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22revisedup%22%3Atrue%2C%22reviseddown%22%3Atrue%2C%22consensus%22%3A%5B%5D%7D%2C%22dy%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_l%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22peg_ratio%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_vp%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_ativo%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22margembruta%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22margemebit%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22margemliquida%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_ebit%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22ev_ebit%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22dividaliquidaebit%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22dividaliquidapatrimonioliquido%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_sr%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_capitalgiro%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_ativocirculante%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22roe%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22roic%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22roa%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22liquidezcorrente%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22pl_ativo%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22passivo_ativo%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22giroativos%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22receitas_cagr5%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22lucros_cagr5%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22liquidezmediadiaria%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22vpa%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22lpa%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22valormercado%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%7D&orderColumn=&isAsc=&page=0&take=611&CategoryType=1'
         
     driver.implicitly_wait(10)
@@ -122,13 +130,13 @@ def getSectorsData(stocksDataFrame):
     
     sectorsJSON = json.loads(driver.find_element('xpath', '/html/body/pre').text)
 
-    sectorsDataFrame = pd.json_normalize(sectorsJSON, record_path='list', sep=',')
-    sectorsDataFrame.rename(columns={'ticker': 'TICKER', 'sectorname': 'SETOR', 'subsectorname': 'SUBSETOR', 'segmentname': 'SEGMENTO'}, inplace=True)
-    sectorsDataFrame.set_index('TICKER', inplace=True)
+    sectorsData = pd.json_normalize(sectorsJSON, record_path='list', sep=',')
+    sectorsData.rename(columns={'ticker': 'TICKER', 'sectorname': 'SETOR', 'subsectorname': 'SUBSETOR', 'segmentname': 'SEGMENTO'}, inplace=True)
+    sectorsData.set_index('TICKER', inplace=True)
 
-    stocksDataFrame = pd.merge(stocksDataFrame, sectorsDataFrame[['SETOR', 'SUBSETOR', 'SEGMENTO']], on='TICKER')
+    stocksData = pd.merge(stocksData, sectorsData[['SETOR', 'SUBSETOR', 'SEGMENTO']], on='TICKER')
     
-    return stocksDataFrame
+    return stocksData
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
 def getTAGAlong(TICKER, driver):
@@ -246,6 +254,23 @@ def getHistoricalRevenue(TICKER, driver):
 
     return result
 
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
+def getPrices(TICKER, driver):
+    data = yf.Ticker(f"{TICKER}.SA")
+
+    fields = ['previousClose', 'open', 'dayLow', 'dayHigh', 'currentPrice']
+    result = {key: data.info.get(key) for key in fields}
+
+    return result
+
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
+def getRecentNews(TICKER, driver):
+    recentNewsURL = f''
+
+    result = {}
+
+    return result
+
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=10))
 def calcFundamentalistIndicators(TICKER, stockData):
     # EBIT
@@ -334,46 +359,59 @@ def calcFundamentalistIndicators(TICKER, stockData):
 #
 #$ Thread worker function
 #
-def process_stock(TICKER, stocksDataFrame):
-    """Process a single stock and return updated stock data"""
+def process_stock(ticker, stocksData):
     driver = setupSelenium()
 
-    stock_data = stocksDataFrame.loc[TICKER].to_dict()
-    
-    try:
+    stockData = stocksData.loc[ticker].to_dict()
 
+    try:
         funcList = [
             ('getTAGAlong', getTAGAlong),
             ('getHistoricalRent', getHistoricalRent), 
             ('getHistoricalDividends', getHistoricalDividends),
             ('getHistoricalDY', getHistoricalDY),
-            ('getHistoricalRevenue', getHistoricalRevenue)
+            ('getHistoricalRevenue', getHistoricalRevenue),
+            ('getPrices', getPrices)
         ]
         
-        for func_name, function in funcList:
+        for funcName, function in funcList:
             try:
-                if func_name == 'getTAGAlong':
-                    stock_data['TAG ALONG'] = function(TICKER, driver)
+                if funcName == 'getTAGAlong':
+                    stockData['TAG ALONG'] = function(ticker, driver)
+                elif funcName == 'getPrices':
+                    priceData = function(ticker, driver)
+                    stockData['PRECO'] = priceData.get('currentPrice', np.nan)
+                    stockData['PRECO ANTERIOR'] = priceData.get('previousClose', np.nan)
+                    stockData['PRECO ABERTURA'] = priceData.get('open', np.nan)
+                    stockData['PRECO MINIMO'] = priceData.get('dayLow', np.nan)
+                    stockData['PRECO MAXIMO'] = priceData.get('dayHigh', np.nan)
                 else:
-                    result = function(TICKER, driver)
-                    stock_data.update(result)
+                    result = function(ticker, driver)
+                    stockData.update(result)
             except Exception as e:
-                print(f'{TICKER} failed {func_name}: {e}')
+                print(f'{ticker} failed {funcName}: {e}')
         
-        stock_data = calcFundamentalistIndicators(TICKER, stock_data)
+        stockData = calcFundamentalistIndicators(ticker, stockData)
                 
     except Exception as e:
-        print(f'{TICKER} general error: {e}')
+        print(f'{ticker} general error: {e}')
     finally:
-        driver.quit()
+        try:
+            driver.quit()
+        except:
+            pass
+        try:
+            driver.close()
+        except:
+            pass
     
-    return TICKER, stock_data
+    return ticker, stockData
 
 #
 #$ Normalize Function
 #
-def normalize(df, order):
-    columns = list(df.columns)
+def normalize(data, order):
+    columns = list(data.columns)
 
     orderedColumns = [col for col in order if col in columns]
 
@@ -382,7 +420,7 @@ def normalize(df, order):
 
     newOrder = orderedColumns + remainingColumns
 
-    return df[newOrder]
+    return data[newOrder]
 
 #
 #$ Main Script Execution
@@ -390,71 +428,79 @@ def normalize(df, order):
 if __name__ == "__main__":
     driver = setupSelenium()
 
-    if os.path.exists(downloadFolder):
-        for root, dirs, files in os.walk(downloadFolder, topdown=False):
-            for name in files:
-                os.remove(os.path.join(downloadFolder, name))
+    try:
+        if os.path.exists(downloadFolder):
+            for root, dirs, files in os.walk(downloadFolder, topdown=False):
+                for name in files:
+                    os.remove(os.path.join(downloadFolder, name))
 
-    stocksDataFrame = downloadCSVfile(csvFileURL)
-    stocksDataFrame = getSectorsData(stocksDataFrame)
-    stocksDataFrame['TIME'] = dateScrape
+        stocksData = downloadCSVfile(csvFileURL)
+        stocksData = getSectorsData(stocksData)
+        stocksData['TIME'] = dateScrape
 
-    driver.quit()
+        #
+        #$ Scrape items for each stock using ThreadPoolExecutor
+        #
+        stocksList = stocksData.index.tolist()
+        results = {}
 
-    #
-    #$ Scrape items for each stock using ThreadPoolExecutor
-    #
-    stocksList = stocksDataFrame.index.tolist()
-    stocksList = stocksList[:10]
-    results = {}
+        with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+            futureToTicker = {
+                executor.submit(process_stock, ticker, stocksData): ticker 
+                for ticker in stocksList
+            }
+            
+            for future in as_completed(futureToTicker):
+                ticker = futureToTicker[future]
+                try:
+                    processedTicker, stockData = future.result()
+                    results[processedTicker] = stockData
+                except Exception as e:
+                    print(f'{ticker} failed processing: {e}')
 
-    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        future_to_ticker = {
-            executor.submit(process_stock, TICKER, stocksDataFrame): TICKER 
-            for TICKER in stocksList
-        }
-        
-        for future in as_completed(future_to_ticker):
-            ticker = future_to_ticker[future]
-            try:
-                processed_ticker, stock_data = future.result()
-                results[processed_ticker] = stock_data
-            except Exception as e:
-                print(f'{ticker} failed processing: {e}')
+        for ticker, data in results.items():
+            for key, value in data.items():
+                stocksData.at[ticker, key] = value
 
-    for ticker, data in results.items():
-        for key, value in data.items():
-            stocksDataFrame.at[ticker, key] = value
+        #
+        #$ Normalize and fix stuff
+        #
+        stocksData = stocksData.round(2)
 
-    #
-    #$ Normalize and fix stuff
-    #
-    stocksDataFrame = stocksDataFrame.round(2)
+        normalizedColumns = ['TIME', 'TICKER', 'SETOR', 'SUBSETOR', 'SEGMENTO', 'ALTMAN Z-SCORE', 'SGR', 'LIQUIDEZ MEDIA DIARIA', 'PRECO', 'PRECO DE BAZIN', 'PRECO DE GRAHAM', 'TAG ALONG', 'RENT 12 MESES', 'RENT MEDIA 5 ANOS', 'DY', 'DY MEDIO 5 ANOS', 'P/L', 'P/VP', 'P/ATIVOS', 'MARGEM BRUTA', 'MARGEM EBIT', 'MARG. LIQUIDA', 'EBIT', 'P/EBIT', 'EV/EBIT', 'DIVIDA LIQUIDA / EBIT', 'DIV. LIQ. / PATRI.', 'PSR', 'P/CAP. GIRO', 'P. AT CIR. LIQ.', 'LIQ. CORRENTE', 'LUCRO LIQUIDO MEDIO 5 ANOS', 'ROE', 'ROA', 'ROIC', 'PATRIMONIO / ATIVOS', 'PASSIVOS / ATIVOS', 'GIRO ATIVOS', 'CAGR DIVIDENDOS 5 ANOS', 'CAGR RECEITAS 5 ANOS', 'CAGR LUCROS 5 ANOS', 'VPA', 'LPA', 'PEG Ratio', 'VALOR DE MERCADO', 'PRECO ABERTURA', 'PRECO ANTERIOR', 'PRECO MAXIMO', 'PRECO MINIMO']
 
-    normalizedColumns = ['TIME', 'TICKER', 'SETOR', 'SUBSETOR', 'SEGMENTO', 'ALTMAN Z-SCORE', 'SGR', 'LIQUIDEZ MEDIA DIARIA', 'PRECO', 'PRECO DE BAZIN', 'PRECO DE GRAHAM', 'TAG ALONG', 'RENT 12 MESES', 'RENT MEDIA 5 ANOS', 'DY', 'DY MEDIO 5 ANOS', 'P/L', 'P/VP', 'P/ATIVOS', 'MARGEM BRUTA', 'MARGEM EBIT', 'MARG. LIQUIDA', 'EBIT', 'P/EBIT', 'EV/EBIT', 'DIVIDA LIQUIDA / EBIT', 'DIV. LIQ. / PATRI.', 'PSR', 'P/CAP. GIRO', 'P. AT CIR. LIQ.', 'LIQ. CORRENTE', 'LUCRO LIQUIDO MEDIO 5 ANOS', 'ROE', 'ROA', 'ROIC', 'PATRIMONIO / ATIVOS', 'PASSIVOS / ATIVOS', 'GIRO ATIVOS', 'CAGR DIVIDENDOS 5 ANOS', 'CAGR RECEITAS 5 ANOS', 'CAGR LUCROS 5 ANOS', 'VPA', 'LPA', 'PEG Ratio', 'VALOR DE MERCADO']
+        stocksData.index.name = 'TICKER'
+        stocksData = stocksData.reset_index()
+        stocksData = normalize(stocksData, normalizedColumns)
 
-    stocksDataFrame.index.name = 'TICKER'
-    stocksDataFrame = stocksDataFrame.reset_index()
-    stocksDataFrame = normalize(stocksDataFrame, normalizedColumns)
+        #
+        #$ Exports
+        #
+        if saveAsJSONL:
+            stocksData.to_json(f'b3_stocks.json', orient='records', indent=4)
 
-    #
-    #$ Exports
-    #
-    if saveAsJSONL:
-        stocksDataFrame.to_json(f'b3_stocks.json', orient='records', indent=4)
+        if saveToMYSQL:
+            existingColumns = pd.read_sql("SELECT * FROM b3_stocks LIMIT 1", con=engine)
+            newColumns = set(stocksData.columns) - set(existingColumns.columns)
 
-    if saveToMYSQL:
-        existingColumns = pd.read_sql("SELECT * FROM b3_stocks LIMIT 1", con=engine)
-        newColumns = set(stocksDataFrame.columns) - set(existingColumns.columns)
+            for col in newColumns:
+                colType = stocksData[col].dtype
+                with engine.connect() as conn:
+                    colType = "TEXT" if stocksData[col].dtype == 'object' else "DOUBLE"
+                    query = text(f"ALTER TABLE b3_stocks ADD COLUMN `{col}` {colType} NULL")
+                    conn.execute(query)
+                    conn.commit()
 
-        for col in newColumns:
-            colType = stocksDataFrame[col].dtype
-            with engine.connect() as conn:
-                colType = "TEXT" if stocksDataFrame[col].dtype == 'object' else "DOUBLE"
-                query = text(f"ALTER TABLE b3_stocks ADD COLUMN `{col}` {colType} NULL")
-                conn.execute(query)
-                conn.commit()
+            stocksData.to_sql('b3_stocks', con=engine, if_exists='append', index=False)
 
-        stocksDataFrame.to_sql('b3_stocks', con=engine, if_exists='append', index=False)
+    finally:
+        try:
+            driver.quit()
+        except:
+            pass
+        try:
+            driver.close()
+        except:
+            pass
         
 print(f"\nTotal execution time: {time.time() - start_time:.2f} seconds")
