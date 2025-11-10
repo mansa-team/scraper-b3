@@ -134,7 +134,7 @@ def getSectorsData(stocksData):
     sectorsData.rename(columns={'ticker': 'TICKER', 'companyname': 'NOME', 'sectorname': 'SETOR', 'subsectorname': 'SUBSETOR', 'segmentname': 'SEGMENTO'}, inplace=True)
     sectorsData.set_index('TICKER', inplace=True)
 
-    stocksData = pd.merge(stocksData, sectorsData[['SETOR', 'SUBSETOR', 'SEGMENTO']], on='TICKER')
+    stocksData = pd.merge(stocksData, sectorsData[['NOME', 'SETOR', 'SUBSETOR', 'SEGMENTO']], on='TICKER')
     
     return stocksData
 
@@ -425,6 +425,7 @@ if __name__ == "__main__":
         #$ Scrape items for each stock using ThreadPoolExecutor
         #
         stocksList = stocksData.index.tolist()
+        stocksList = stocksList[:5]
         results = {}
 
         with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
@@ -485,5 +486,20 @@ if __name__ == "__main__":
             driver.close()
         except:
             pass
+
+        try:
+            subprocess.run(['taskkill', '/F', '/IM', 'chromedriver.exe'], 
+                         stdout=subprocess.DEVNULL, 
+                         stderr=subprocess.DEVNULL)
+        except:
+            pass
         
+        try:
+            subprocess.run(['taskkill', '/F', '/IM', 'chrome.exe'], 
+                         stdout=subprocess.DEVNULL, 
+                         stderr=subprocess.DEVNULL)
+        except:
+            pass
+
+        gc.collect()
 print(f"\nTotal execution time: {time.time() - start_time:.2f} seconds")
