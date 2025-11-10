@@ -361,8 +361,7 @@ def process_stock(ticker, stocksData):
             ('getHistoricalRent', getHistoricalRent), 
             ('getHistoricalDividends', getHistoricalDividends),
             ('getHistoricalDY', getHistoricalDY),
-            ('getHistoricalRevenue', getHistoricalRevenue),
-            ('getPrices', getPrices)
+            ('getHistoricalRevenue', getHistoricalRevenue)
         ]
         
         for funcName, function in funcList:
