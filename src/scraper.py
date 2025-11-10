@@ -131,7 +131,7 @@ def getSectorsData(stocksData):
     sectorsJSON = json.loads(driver.find_element('xpath', '/html/body/pre').text)
 
     sectorsData = pd.json_normalize(sectorsJSON, record_path='list', sep=',')
-    sectorsData.rename(columns={'ticker': 'TICKER', 'sectorname': 'SETOR', 'subsectorname': 'SUBSETOR', 'segmentname': 'SEGMENTO'}, inplace=True)
+    sectorsData.rename(columns={'ticker': 'TICKER', 'companyname': 'NOME', 'sectorname': 'SETOR', 'subsectorname': 'SUBSETOR', 'segmentname': 'SEGMENTO'}, inplace=True)
     sectorsData.set_index('TICKER', inplace=True)
 
     stocksData = pd.merge(stocksData, sectorsData[['SETOR', 'SUBSETOR', 'SEGMENTO']], on='TICKER')
@@ -255,15 +255,6 @@ def getHistoricalRevenue(TICKER, driver):
     return result
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
-def getPrices(TICKER, driver):
-    data = yf.Ticker(f"{TICKER}.SA")
-
-    fields = ['previousClose', 'open', 'dayLow', 'dayHigh', 'currentPrice']
-    result = {key: data.info.get(key) for key in fields}
-
-    return result
-
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
 def getRecentNews(TICKER, driver):
     recentNewsURL = f''
 
@@ -378,13 +369,6 @@ def process_stock(ticker, stocksData):
             try:
                 if funcName == 'getTAGAlong':
                     stockData['TAG ALONG'] = function(ticker, driver)
-                elif funcName == 'getPrices':
-                    priceData = function(ticker, driver)
-                    stockData['PRECO'] = priceData.get('currentPrice', np.nan)
-                    stockData['PRECO ANTERIOR'] = priceData.get('previousClose', np.nan)
-                    stockData['PRECO ABERTURA'] = priceData.get('open', np.nan)
-                    stockData['PRECO MINIMO'] = priceData.get('dayLow', np.nan)
-                    stockData['PRECO MAXIMO'] = priceData.get('dayHigh', np.nan)
                 else:
                     result = function(ticker, driver)
                     stockData.update(result)
@@ -467,7 +451,7 @@ if __name__ == "__main__":
         #
         stocksData = stocksData.round(2)
 
-        normalizedColumns = ['TIME', 'TICKER', 'SETOR', 'SUBSETOR', 'SEGMENTO', 'ALTMAN Z-SCORE', 'SGR', 'LIQUIDEZ MEDIA DIARIA', 'PRECO', 'PRECO DE BAZIN', 'PRECO DE GRAHAM', 'TAG ALONG', 'RENT 12 MESES', 'RENT MEDIA 5 ANOS', 'DY', 'DY MEDIO 5 ANOS', 'P/L', 'P/VP', 'P/ATIVOS', 'MARGEM BRUTA', 'MARGEM EBIT', 'MARG. LIQUIDA', 'EBIT', 'P/EBIT', 'EV/EBIT', 'DIVIDA LIQUIDA / EBIT', 'DIV. LIQ. / PATRI.', 'PSR', 'P/CAP. GIRO', 'P. AT CIR. LIQ.', 'LIQ. CORRENTE', 'LUCRO LIQUIDO MEDIO 5 ANOS', 'ROE', 'ROA', 'ROIC', 'PATRIMONIO / ATIVOS', 'PASSIVOS / ATIVOS', 'GIRO ATIVOS', 'CAGR DIVIDENDOS 5 ANOS', 'CAGR RECEITAS 5 ANOS', 'CAGR LUCROS 5 ANOS', 'VPA', 'LPA', 'PEG Ratio', 'VALOR DE MERCADO', 'PRECO ABERTURA', 'PRECO ANTERIOR', 'PRECO MAXIMO', 'PRECO MINIMO']
+        normalizedColumns = ['TIME', 'NOME', 'TICKER', 'SETOR', 'SUBSETOR', 'SEGMENTO', 'ALTMAN Z-SCORE', 'SGR', 'LIQUIDEZ MEDIA DIARIA', 'PRECO', 'PRECO DE BAZIN', 'PRECO DE GRAHAM', 'TAG ALONG', 'RENT 12 MESES', 'RENT MEDIA 5 ANOS', 'DY', 'DY MEDIO 5 ANOS', 'P/L', 'P/VP', 'P/ATIVOS', 'MARGEM BRUTA', 'MARGEM EBIT', 'MARG. LIQUIDA', 'EBIT', 'P/EBIT', 'EV/EBIT', 'DIVIDA LIQUIDA / EBIT', 'DIV. LIQ. / PATRI.', 'PSR', 'P/CAP. GIRO', 'P. AT CIR. LIQ.', 'LIQ. CORRENTE', 'LUCRO LIQUIDO MEDIO 5 ANOS', 'ROE', 'ROA', 'ROIC', 'PATRIMONIO / ATIVOS', 'PASSIVOS / ATIVOS', 'GIRO ATIVOS', 'CAGR DIVIDENDOS 5 ANOS', 'CAGR RECEITAS 5 ANOS', 'CAGR LUCROS 5 ANOS', 'VPA', 'LPA', 'PEG Ratio', 'VALOR DE MERCADO', 'PRECO ABERTURA', 'PRECO ANTERIOR', 'PRECO MAXIMO', 'PRECO MINIMO']
 
         stocksData.index.name = 'TICKER'
         stocksData = stocksData.reset_index()
