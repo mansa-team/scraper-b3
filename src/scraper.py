@@ -84,7 +84,6 @@ def setupSelenium():
     options.add_argument('--no-first-run')
     options.add_argument('--password-store=basic')
     options.add_argument('--use-mock-volume-mount-config')
-
     options.add_argument('--memory-pressure-off')
     options.add_argument('--renderer-process-limit=1')
 
@@ -261,7 +260,7 @@ def getRecentNews(TICKER, driver):
 
     return result
 
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=10))
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
 def calcFundamentalistIndicators(TICKER, stockData):
     # EBIT
     try:
