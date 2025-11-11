@@ -6,8 +6,8 @@ from imports import *
 #
 #$ Script Configuration and Basic Setup
 #
-saveToMYSQL = False
-saveAsJSONL = True
+saveToMYSQL = True
+saveAsJSONL = False
 MAX_WORKERS = 6
 
 """
@@ -423,7 +423,6 @@ if __name__ == "__main__":
         #$ Scrape items for each stock using ThreadPoolExecutor
         #
         stocksList = stocksData.index.tolist()
-        stocksList = stocksList[:5]
         results = {}
 
         with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
