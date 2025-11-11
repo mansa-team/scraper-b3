@@ -68,7 +68,6 @@ def setupSelenium():
     options.add_argument('--disable-prompt-on-repost')
     options.add_argument('--disable-background-timer-throttling')
     options.add_argument('--disable-backgrounding-occluded-windows')
-    options.add_argument('--disable-breakpad')
     options.add_argument('--disable-client-side-phishing-detection')
     options.add_argument('--disable-default-apps')
     options.add_argument('--disable-device-discovery-notifications')
@@ -352,7 +351,6 @@ def calcFundamentalistIndicators(TICKER, stockData):
 #
 def process_stock(ticker, stocksData):
     driver = setupSelenium()
-
     stockData = stocksData.loc[ticker].to_dict()
 
     try:
