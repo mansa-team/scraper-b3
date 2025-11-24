@@ -438,16 +438,18 @@ if __name__ == "__main__":
                 except Exception as e:
                     print(f'{ticker} failed processing: {e}')
 
-        for ticker, data in results.items():
-            for key, value in data.items():
-                stocksData.at[ticker, key] = value
+        if results:
+            resultsDF = pd.DataFrame.from_dict(results, orient='index')
+            resultsDF.index.name = 'TICKER'
+
+            stocksData.update(resultsDF)
 
         #
         #$ Normalize and fix stuff
         #
         stocksData = stocksData.round(2)
 
-        normalizedColumns = ['TIME', 'NOME', 'TICKER', 'SETOR', 'SUBSETOR', 'SEGMENTO', 'ALTMAN Z-SCORE', 'SGR', 'LIQUIDEZ MEDIA DIARIA', 'PRECO', 'PRECO DE BAZIN', 'PRECO DE GRAHAM', 'TAG ALONG', 'RENT 12 MESES', 'RENT MEDIA 5 ANOS', 'DY', 'DY MEDIO 5 ANOS', 'P/L', 'P/VP', 'P/ATIVOS', 'MARGEM BRUTA', 'MARGEM EBIT', 'MARG. LIQUIDA', 'EBIT', 'P/EBIT', 'EV/EBIT', 'DIVIDA LIQUIDA / EBIT', 'DIV. LIQ. / PATRI.', 'PSR', 'P/CAP. GIRO', 'P. AT CIR. LIQ.', 'LIQ. CORRENTE', 'LUCRO LIQUIDO MEDIO 5 ANOS', 'ROE', 'ROA', 'ROIC', 'PATRIMONIO / ATIVOS', 'PASSIVOS / ATIVOS', 'GIRO ATIVOS', 'CAGR DIVIDENDOS 5 ANOS', 'CAGR RECEITAS 5 ANOS', 'CAGR LUCROS 5 ANOS', 'VPA', 'LPA', 'PEG Ratio', 'VALOR DE MERCADO', 'PRECO ABERTURA', 'PRECO ANTERIOR', 'PRECO MAXIMO', 'PRECO MINIMO']
+        normalizedColumns = ['TIME', 'NOME', 'TICKER', 'SETOR', 'SUBSETOR', 'SEGMENTO', 'ALTMAN Z-SCORE', 'SGR', 'LIQUIDEZ MEDIA DIARIA', 'PRECO', 'PRECO DE BAZIN', 'PRECO DE GRAHAM', 'TAG ALONG', 'RENT 12 MESES', 'RENT MEDIA 5 ANOS', 'DY', 'DY MEDIO 5 ANOS', 'P/L', 'P/VP', 'P/ATIVOS', 'MARGEM BRUTA', 'MARGEM EBIT', 'MARG. LIQUIDA', 'EBIT', 'P/EBIT', 'EV/EBIT', 'DIVIDA LIQUIDA / EBIT', 'DIV. LIQ. / PATRI.', 'PSR', 'P/CAP. GIRO', 'P. AT CIR. LIQ.', 'LIQ. CORRENTE', 'LUCRO LIQUIDO MEDIO 5 ANOS', 'ROE', 'ROA', 'ROIC', 'PATRIMONIO / ATIVOS', 'PASSIVOS / ATIVOS', 'GIRO ATIVOS', 'CAGR DIVIDENDOS 5 ANOS', 'CAGR RECEITAS 5 ANOS', 'CAGR LUCROS 5 ANOS', 'VPA', 'LPA', 'PEG Ratio', 'VALOR DE MERCADO']
 
         stocksData.index.name = 'TICKER'
         stocksData = stocksData.reset_index()
@@ -460,16 +462,19 @@ if __name__ == "__main__":
             stocksData.to_json(f'b3_stocks.json', orient='records', indent=4)
 
         if saveToMYSQL:
-            existingColumns = pd.read_sql("SELECT * FROM b3_stocks LIMIT 1", con=engine)
-            newColumns = set(stocksData.columns) - set(existingColumns.columns)
+            try:
+                existingColumns = pd.read_sql("SELECT * FROM b3_stocks LIMIT 1", con=engine)
+                newColumns = set(stocksData.columns) - set(existingColumns.columns)
 
-            for col in newColumns:
-                colType = stocksData[col].dtype
-                with engine.connect() as conn:
-                    colType = "TEXT" if stocksData[col].dtype == 'object' else "DOUBLE"
-                    query = text(f"ALTER TABLE b3_stocks ADD COLUMN `{col}` {colType} NULL")
-                    conn.execute(query)
-                    conn.commit()
+                for col in newColumns:
+                    colType = stocksData[col].dtype
+                    with engine.connect() as conn:
+                        colType = "TEXT" if stocksData[col].dtype == 'object' else "DOUBLE"
+                        query = text(f"ALTER TABLE b3_stocks ADD COLUMN `{col}` {colType} NULL")
+                        conn.execute(query)
+                        conn.commit()
+            except:
+                pass
 
             stocksData.to_sql('b3_stocks', con=engine, if_exists='append', index=False)
 
