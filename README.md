@@ -1,4 +1,4 @@
-# Scraper B3
+# Brazilian Stocks Market Scraper
 
 A high-performance Python scraper to collect, process, and store Brazilian stock market (B3) data from StatusInvest and TradingView. Built for research to the AI models for the [Mansa](https://github.com/mansa-team) project.
 
