@@ -15,7 +15,7 @@ A high-performance Python scraper to collect, process, and store Brazilian stock
    ```
 
 4. Create environment configuration:
-   ```bash
+   ```env
    # Create .env file with your MySQL credentials
    MYSQL_USER=your_username
    MYSQL_PASSWORD=your_password
@@ -33,7 +33,7 @@ python src/scraper.py
 ### Configuration Options
 Edit the script configuration section to customize:
 
-```python
+```env
 # Script Configuration
 saveToMYSQL = True      # Export to MySQL database
 saveAsJSONL = True      # Export to JSON file
