@@ -1,5 +1,4 @@
 .env
-src/cache
+src/main/cache
 downloaded_files
-src/scraper-refactor.py
 b3_stocks.json

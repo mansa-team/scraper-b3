@@ -1,42 +1,24 @@
-#
-#$ Import Libraries
-#
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
 from imports import *
+from normalize import *
 
 #
-#$ Script Configuration and Basic Setup
+#$ Basic Setup
 #
-saveToMYSQL = True
-saveAsJSONL = False
-MAX_WORKERS = 6
-
-"""
-Create a .env file in the root directory and put your user information for your MYSQL database like the following:
-MYSQL_USER=user
-MYSQL_PASSWORD=password
-MYSQL_HOST=ip
-MYSQL_DATABASE=database
-
-The os.environ alternative is for automations using Github Actions, in which, you create a secret key in github and use it as your system variable
-"""
-
-load_dotenv()
-
-confgMySQL = {
-    'host': os.getenv('MYSQL_HOST') or os.environ.get('MYSQL_HOST'),
-    'user': os.getenv('MYSQL_USER') or os.environ.get('MYSQL_USER'),
-    'password': os.getenv('MYSQL_PASSWORD') or os.environ.get('MYSQL_PASSWORD'),
-    'database': os.getenv('MYSQL_DATABASE') or os.environ.get('MYSQL_DATABASE')
-}
-engine = create_engine(f"mysql+pymysql://{confgMySQL['user']}:{confgMySQL['password']}@{confgMySQL['host']}/{confgMySQL['database']}")
+engine = create_engine(f"mysql+pymysql://{Config.MYSQL['USER']}:{Config.MYSQL['PASSWORD']}@{Config.MYSQL['HOST']}/{Config.MYSQL['DATABASE']}")
 
 start_time = time.time()
 current_year = datetime.now().year
-dateScrape = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+scrapeDate = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 scriptDirectory = os.path.dirname(os.path.abspath(__file__))
 downloadFolder = os.path.join(scriptDirectory, 'cache')
 csvFilePath = os.path.join(downloadFolder, 'statusinvest-busca-avancada.csv')
+
+# https://api.bcb.gov.br/dados/serie/bcdata.sgs.4189/dados?formato=json (Selic)
 
 csvFileURL = f'https://statusinvest.com.br/category/AdvancedSearchResultExport?search=%7B%22Sector%22%3A%22%22%2C%22SubSector%22%3A%22%22%2C%22Segment%22%3A%22%22%2C%22my_range%22%3A%22-20%3B100%22%2C%22forecast%22%3A%7B%22upsidedownside%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22estimatesnumber%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22revisedup%22%3Atrue%2C%22reviseddown%22%3Atrue%2C%22consensus%22%3A%5B%5D%7D%2C%22dy%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_l%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22peg_ratio%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_vp%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_ativo%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22margembruta%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22margemebit%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22margemliquida%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_ebit%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22ev_ebit%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22dividaliquidaebit%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22dividaliquidapatrimonioliquido%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_sr%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_capitalgiro%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_ativocirculante%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22roe%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22roic%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22roa%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22liquidezcorrente%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22pl_ativo%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22passivo_ativo%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22giroativos%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22receitas_cagr5%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22lucros_cagr5%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22liquidezmediadiaria%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22vpa%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22lpa%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22valormercado%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%7D&CategoryType=1'
 
@@ -253,14 +235,6 @@ def getHistoricalRevenue(TICKER, driver):
     return result
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
-def getRecentNews(TICKER, driver):
-    recentNewsURL = f''
-
-    result = {}
-
-    return result
-
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
 def calcFundamentalistIndicators(TICKER, stockData):
     # EBIT
     try:
@@ -388,21 +362,6 @@ def process_stock(ticker, stocksData):
     return ticker, stockData
 
 #
-#$ Normalize Function
-#
-def normalize(data, order):
-    columns = list(data.columns)
-
-    orderedColumns = [col for col in order if col in columns]
-
-    remainingColumns = [col for col in columns if col not in orderedColumns]
-    remainingColumns.sort()
-
-    newOrder = orderedColumns + remainingColumns
-
-    return data[newOrder]
-
-#
 #$ Main Script Execution
 #
 if __name__ == "__main__":
@@ -416,7 +375,7 @@ if __name__ == "__main__":
 
         stocksData = downloadCSVfile(csvFileURL)
         stocksData = getSectorsData(stocksData)
-        stocksData['TIME'] = dateScrape
+        stocksData['TIME'] = scrapeDate
 
         #
         #$ Scrape items for each stock using ThreadPoolExecutor
@@ -424,7 +383,7 @@ if __name__ == "__main__":
         stocksList = stocksData.index.tolist()
         results = {}
 
-        with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        with ThreadPoolExecutor(max_workers=int(Config.SCRAPER['MAX_WORKERS'])) as executor:
             futureToTicker = {
                 executor.submit(process_stock, ticker, stocksData): ticker 
                 for ticker in stocksList
@@ -458,10 +417,10 @@ if __name__ == "__main__":
         #
         #$ Exports
         #
-        if saveAsJSONL:
+        if Config.SCRAPER['JSON'] == 'TRUE':
             stocksData.to_json(f'b3_stocks.json', orient='records', indent=4)
 
-        if saveToMYSQL:
+        if Config.SCRAPER['MYSQL'] == 'TRUE':
             try:
                 existingColumns = pd.read_sql("SELECT * FROM b3_stocks LIMIT 1", con=engine)
                 newColumns = set(stocksData.columns) - set(existingColumns.columns)
@@ -487,8 +446,7 @@ if __name__ == "__main__":
                     driver.close()
                 except:
                     pass
-        
-        # Kill remaining Chrome processes
+
         chrome_processes = ['chromedriver.exe', 'chrome.exe']
         for process in chrome_processes:
             try:
@@ -504,4 +462,5 @@ if __name__ == "__main__":
                 pass
 
         gc.collect()
+
 print(f"\nTotal execution time: {time.time() - start_time:.2f} seconds")
