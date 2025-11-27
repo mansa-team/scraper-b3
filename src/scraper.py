@@ -479,28 +479,29 @@ if __name__ == "__main__":
             stocksData.to_sql('b3_stocks', con=engine, if_exists='append', index=False)
 
     finally:
-        try:
-            driver.quit()
-        except:
-            pass
-        try:
-            driver.close()
-        except:
-            pass
-
-        try:
-            subprocess.run(['taskkill', '/F', '/IM', 'chromedriver.exe'], 
-                         stdout=subprocess.DEVNULL, 
-                         stderr=subprocess.DEVNULL)
-        except:
-            pass
+        if driver:
+            try:
+                driver.quit()
+            except Exception as e:
+                try:
+                    driver.close()
+                except:
+                    pass
         
-        try:
-            subprocess.run(['taskkill', '/F', '/IM', 'chrome.exe'], 
-                         stdout=subprocess.DEVNULL, 
-                         stderr=subprocess.DEVNULL)
-        except:
-            pass
+        # Kill remaining Chrome processes
+        chrome_processes = ['chromedriver.exe', 'chrome.exe']
+        for process in chrome_processes:
+            try:
+                subprocess.run(
+                    ['taskkill', '/F', '/IM', process],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    timeout=5
+                )
+            except subprocess.TimeoutExpired:
+                pass
+            except Exception:
+                pass
 
         gc.collect()
 print(f"\nTotal execution time: {time.time() - start_time:.2f} seconds")
