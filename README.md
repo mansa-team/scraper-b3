@@ -1,6 +1,6 @@
 # Brazilian Stocks Market Scraper
 
-A high-performance Python scraper to collect, process, and store Brazilian stock market (B3) data from StatusInvest and TradingView. Built for research to the AI models for the [Mansa](https://github.com/mansa-team) project.
+A high-performance Python scraper to collect, process, and store Brazilian stock market (B3) data from StatusInvest and TradingView. Built for research and for API data and models for the [Mansa](https://github.com/mansa-team) project.
 
 ## Installation
 1. Clone the repository:
@@ -14,37 +14,35 @@ A high-performance Python scraper to collect, process, and store Brazilian stock
    pip install -r requirements.txt
    ```
 
-4. Create environment configuration:
+3. Create environment configuration:
    ```env
-   # Create .env file with your MySQL credentials
-   MYSQL_USER=your_username
-   MYSQL_PASSWORD=your_password
-   MYSQL_HOST=localhost
-   MYSQL_DATABASE=scraper_b3
+   #
+   #$ DATABASE CONFIGURATION
+   #
+   MYSQL_USER=user
+   MYSQL_PASSWORD=password
+   MYSQL_HOST=host
+   MYSQL_DATABASE=database
+
+   #
+   #$ SCRAPER CONFIGURATION
+   #
+   SCRAPER_ENABLED=TRUE
+   # Example: 18:30;18:45;19:00
+   SCRAPER_SCHEDULER=18:30
+
+   JSON_EXPORT=TRUE
+   MYSQL_EXPORT=FALSE
+
+   MAX_WORKERS=6
    ```
 
-## Usage
+4. Run the Scraper/Scheduler
+   ```bash
+   python src/__init__.py
+   ```
 
-### Basic Usage
-```bash
-python src/scraper.py
-```
-
-### Configuration Options
-Edit the script configuration section to customize:
-
-```env
-# Script Configuration
-saveToMYSQL = True      # Export to MySQL database
-saveAsJSONL = True      # Export to JSON file
-MAX_WORKERS = 6         # Number of parallel threads (adjust based on your system)
-```
-
-## Data Sources
-- **StatusInvest**: Financial metrics, sector data, TAG along, dividends, revenue data
-- **TradingView**: Historical performance and returns data
-
-## Output Structure
+## Response Format
 
 ### JSON Export (`b3_stocks.json`)
 ```json
