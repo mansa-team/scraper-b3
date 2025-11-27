@@ -28,7 +28,9 @@ def initialize(module, config):
     print("\n", "=" * 60)
     print(f"Configuring {module}\n")
 
-    #$ Scraper
+    #
+    #$ SCRAPER
+    #
     if module == 'SCRAPER':
         if Config.SCRAPER['MYSQL'] and not mysql_connectiontest():
             return
