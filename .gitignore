@@ -1,4 +1,5 @@
 .env
 src/main/cache
+src/main/app/cache
 downloaded_files
 b3_stocks.json
