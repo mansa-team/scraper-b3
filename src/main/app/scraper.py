@@ -23,6 +23,8 @@ csvFileURL = f'https://statusinvest.com.br/category/AdvancedSearchResultExport?s
 #
 #$ Setup Selenium WebDriver
 #
+driver_queue = None
+
 def setupSelenium():
     options = webdriver.ChromeOptions()
 
@@ -45,13 +47,48 @@ def setupSelenium():
         service=Service(log_output=os.devnull),
     )
 
+    driver.implicitly_wait(3)
+
     return driver
+
+#
+#$ Initialize Driver Queue
+#
+def init_driver_queue(num_workers):
+    global driver_queue
+    driver_queue = Queue(maxsize=num_workers)
+
+    for i in range(num_workers):
+        driver = setupSelenium()
+        driver_queue.put(driver)
+
+def get_driver():
+    return driver_queue.get()
+
+def return_driver(driver):
+    try:
+        driver.execute_script("window.localStorage.clear();")
+        driver.execute_script("window.sessionStorage.clear();")
+        driver.delete_all_cookies()
+        driver.get("about:blank")
+    except:
+        pass
+    driver_queue.put(driver)
+
+def shutdown_drivers():
+    global driver_queue
+    while not driver_queue.empty():
+        try:
+            driver = driver_queue.get_nowait()
+            driver.quit()
+        except:
+            pass
 
 #
 #$ Scraping Functions
 #
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
-def downloadCSVfile(url):
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=3))
+def downloadCSVfile(url, driver):
     if not os.path.exists(downloadFolder):
         os.makedirs(downloadFolder)
 
@@ -62,11 +99,10 @@ def downloadCSVfile(url):
 
     return stocksData
 
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
-def getSectorsData(stocksData):
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=3))
+def getSectorsData(stocksData, driver):
     stockSectorsURL = f'https://statusinvest.com.br/category/advancedsearchresultpaginated?search=%7B%22Sector%22%3A%22%22%2C%22SubSector%22%3A%22%22%2C%22Segment%22%3A%22%22%2C%22my_range%22%3A%22-20%3B100%22%2C%22forecast%22%3A%7B%22upsidedownside%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22estimatesnumber%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22revisedup%22%3Atrue%2C%22reviseddown%22%3Atrue%2C%22consensus%22%3A%5B%5D%7D%2C%22dy%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_l%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22peg_ratio%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_vp%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_ativo%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22margembruta%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22margemebit%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22margemliquida%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_ebit%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22ev_ebit%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22dividaliquidaebit%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22dividaliquidapatrimonioliquido%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_sr%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_capitalgiro%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22p_ativocirculante%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22roe%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22roic%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22roa%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22liquidezcorrente%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22pl_ativo%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22passivo_ativo%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22giroativos%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22receitas_cagr5%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22lucros_cagr5%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22liquidezmediadiaria%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22vpa%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22lpa%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%2C%22valormercado%22%3A%7B%22Item1%22%3Anull%2C%22Item2%22%3Anull%7D%7D&orderColumn=&isAsc=&page=0&take=611&CategoryType=1'
         
-    driver.implicitly_wait(10)
     driver.get(stockSectorsURL)
     
     sectorsJSON = json.loads(driver.find_element('xpath', '/html/body/pre').text)
@@ -79,30 +115,20 @@ def getSectorsData(stocksData):
     
     return stocksData
 
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=3))
 def getTAGAlong(TICKER, driver):
-    statusInvestURL = f'https://statusinvest.com.br/acoes/{TICKER}'
- 
-    driver.implicitly_wait(10)
-    driver.get(statusInvestURL)
+    driver.get(f'https://statusinvest.com.br/acoes/{TICKER}')
 
     tagAlong = driver.find_element('xpath', "//div[@class='top-info top-info-1 top-info-sm-2 top-info-md-3 top-info-xl-n sm d-flex justify-between']/div[@class='info']").text
 
-    replaceList = ['help_outline', 'TAG ALONG', ' %', '\n']
-    for item in replaceList:
+    for item in ['help_outline', 'TAG ALONG', ' %', '\n']:
         tagAlong = tagAlong.replace(item, '')
 
-    if tagAlong == '--':
-        tagAlong = np.nan
+    return int(tagAlong) if tagAlong != '--' else np.nan
 
-    return int(tagAlong)
-
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=3))
 def getHistoricalRent(TICKER, driver):
-    tradingViewURL = f'https://scanner.tradingview.com/symbol?symbol=BMFBOVESPA%3A{TICKER}&fields=change%2CPerf.5D%2CPerf.W%2CPerf.1M%2CPerf.6M%2CPerf.YTD%2CPerf.Y%2CPerf.5Y%2CPerf.All&no_404=true&label-product=symbols-performance'
-
-    driver.implicitly_wait(10)
-    driver.get(tradingViewURL)
+    driver.get(f'https://scanner.tradingview.com/symbol?symbol=BMFBOVESPA%3A{TICKER}&fields=change%2CPerf.5D%2CPerf.W%2CPerf.1M%2CPerf.6M%2CPerf.YTD%2CPerf.Y%2CPerf.5Y%2CPerf.All&no_404=true&label-product=symbols-performance')
 
     historicalRentJSON = json.loads(driver.find_element('xpath', '/html/body/pre').text)
 
@@ -119,12 +145,9 @@ def getHistoricalRent(TICKER, driver):
     
     return result
 
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=3))
 def getHistoricalDividends(TICKER, driver):
-    dividendYeildsURL = f'https://statusinvest.com.br/acao/companytickerprovents?companyName=&ticker={TICKER}&chartProventsType=2'
-
-    driver.implicitly_wait(10)
-    driver.get(dividendYeildsURL)
+    driver.get(f'https://statusinvest.com.br/acao/companytickerprovents?companyName=&ticker={TICKER}&chartProventsType=2')
 
     yeildsJSON = json.loads(driver.find_element('xpath', '/html/body/pre').text)
     yeildsJSON = pd.json_normalize(yeildsJSON, record_path='assetEarningsYearlyModels', sep='')
@@ -135,9 +158,8 @@ def getHistoricalDividends(TICKER, driver):
 
     return result
 
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=3))
 def getHistoricalDY(TICKER, driver):
-    driver.implicitly_wait(10)
     driver.get(f'https://statusinvest.com.br/acoes/{TICKER}')
     
     script = f"""
@@ -173,12 +195,9 @@ def getHistoricalDY(TICKER, driver):
 
     return result
 
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=3))
 def getHistoricalRevenue(TICKER, driver):
-    historicalRevenueURL = f'https://statusinvest.com.br/acao/getrevenue?code={TICKER}&type=2&viewType=0'
-
-    driver.implicitly_wait(10)
-    driver.get(historicalRevenueURL)
+    driver.get(f'https://statusinvest.com.br/acao/getrevenue?code={TICKER}&type=2&viewType=0')
 
     revenueJSON = json.loads(driver.find_element('xpath', '/html/body/pre').text)
     revenueJSON = pd.json_normalize(revenueJSON, sep=',')
@@ -195,7 +214,7 @@ def getHistoricalRevenue(TICKER, driver):
 
     return result
 
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=3))
 def calcFundamentalistIndicators(TICKER, stockData):
     # EBIT
     try:
@@ -281,10 +300,10 @@ def calcFundamentalistIndicators(TICKER, stockData):
     return stockData
 
 #
-#$ Thread worker function
+#$ Thread worker function - Gets driver from queue
 #
 def process_stock(ticker, stocksData):
-    driver = setupSelenium()
+    driver = get_driver()
     stockData = stocksData.loc[ticker].to_dict()
 
     try:
@@ -311,14 +330,7 @@ def process_stock(ticker, stocksData):
     except Exception as e:
         print(f'{ticker} general error: {e}')
     finally:
-        try:
-            driver.quit()
-        except:
-            pass
-        try:
-            driver.close()
-        except:
-            pass
+        return_driver(driver)
     
     return ticker, stockData
 
@@ -326,7 +338,8 @@ def process_stock(ticker, stocksData):
 #$ Main Script Execution
 #
 if __name__ == "__main__":
-    driver = setupSelenium()
+    init_driver_queue(int(Config.SCRAPER['MAX_WORKERS']))
+    main_driver = get_driver()
 
     try:
         if os.path.exists(downloadFolder):
@@ -334,13 +347,10 @@ if __name__ == "__main__":
                 for name in files:
                     os.remove(os.path.join(downloadFolder, name))
 
-        stocksData = downloadCSVfile(csvFileURL)
-        stocksData = getSectorsData(stocksData)
+        stocksData = downloadCSVfile(csvFileURL, main_driver)
+        stocksData = getSectorsData(stocksData, main_driver)
         stocksData['TIME'] = scrapeDate
 
-        #
-        #$ Scrape items for each stock using ThreadPoolExecutor
-        #
         stocksList = stocksData.index.tolist()
         results = {}
 
@@ -356,19 +366,17 @@ if __name__ == "__main__":
                     processedTicker, stockData = future.result()
                     results[processedTicker] = stockData
                 except Exception as e:
-                    print(f'{ticker} failed processing: {e}')
+                    print(f'{ticker} failed: {e}')
 
         if results:
             resultsDF = pd.DataFrame.from_dict(results, orient='index')
             resultsDF.index.name = 'TICKER'
-
             stocksData = stocksData.combine_first(resultsDF)
 
         #
         #$ Normalize and format things
         #
         stocksData = stocksData.round(2)
-
         normalizedColumns = ['TIME', 'NOME', 'TICKER', 'SETOR', 'SUBSETOR', 'SEGMENTO', 'ALTMAN Z-SCORE', 'SGR', 'LIQUIDEZ MEDIA DIARIA', 'PRECO', 'PRECO DE BAZIN', 'PRECO DE GRAHAM', 'TAG ALONG', 'RENT 12 MESES', 'RENT MEDIA 5 ANOS', 'DY', 'DY MEDIO 5 ANOS', 'P/L', 'P/VP', 'P/ATIVOS', 'MARGEM BRUTA', 'MARGEM EBIT', 'MARG. LIQUIDA', 'EBIT', 'P/EBIT', 'EV/EBIT', 'DIVIDA LIQUIDA / EBIT', 'DIV. LIQ. / PATRI.', 'PSR', 'P/CAP. GIRO', 'P. AT CIR. LIQ.', 'LIQ. CORRENTE', 'LUCRO LIQUIDO MEDIO 5 ANOS', 'ROE', 'ROA', 'ROIC', 'PATRIMONIO / ATIVOS', 'PASSIVOS / ATIVOS', 'GIRO ATIVOS', 'CAGR DIVIDENDOS 5 ANOS', 'CAGR RECEITAS 5 ANOS', 'CAGR LUCROS 5 ANOS', 'VPA', 'LPA', 'PEG Ratio', 'VALOR DE MERCADO']
 
         stocksData.index.name = 'TICKER'
@@ -385,7 +393,6 @@ if __name__ == "__main__":
             try:
                 existingColumns = pd.read_sql("SELECT * FROM b3_stocks LIMIT 1", con=engine)
                 newColumns = set(stocksData.columns) - set(existingColumns.columns)
-
                 for col in newColumns:
                     colType = stocksData[col].dtype
                     with engine.connect() as conn:
@@ -399,29 +406,16 @@ if __name__ == "__main__":
             stocksData.to_sql('b3_stocks', con=engine, if_exists='append', index=False)
 
     finally:
-        if driver:
-            try:
-                driver.quit()
-            except Exception as e:
-                try:
-                    driver.close()
-                except:
-                    pass
+        return_driver(main_driver)
+        shutdown_drivers()
 
         chrome_processes = ['chromedriver.exe', 'chrome.exe']
         for process in chrome_processes:
             try:
-                subprocess.run(
-                    ['taskkill', '/F', '/IM', process],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    timeout=5
-                )
-            except subprocess.TimeoutExpired:
-                pass
-            except Exception:
+                subprocess.run(['taskkill', '/F', '/IM', process], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
+            except:
                 pass
 
         gc.collect()
 
-print(f"\nTotal execution time: {time.time() - start_time:.2f} seconds")
+print(f"\nExecution time: {time.time() - start_time:.0f} seconds")

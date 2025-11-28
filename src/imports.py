@@ -12,6 +12,7 @@ import numpy as np
 from sqlalchemy import create_engine, text, types
 
 import threading
+from queue import Queue
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import selenium
