@@ -72,4 +72,4 @@ A high-performance Python scraper to collect, process, and store Brazilian stock
 ```
 
 ## License
-GPL 3.0 MODIFIED Mansa Team's License. See LICENSE for details.
+Mansa Team's MODIFIED GPL 3.0 License. See LICENSE for details.
