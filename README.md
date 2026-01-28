@@ -39,7 +39,7 @@ A high-performance Python scraper to collect, process, and store Brazilian stock
 
 4. Run the Scraper/Scheduler
    ```bash
-   python src/__init__.py
+   python __init__.py
    ```
 
 ## Response Format

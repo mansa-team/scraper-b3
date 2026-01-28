@@ -112,7 +112,7 @@ def getSectorsData(stocksData, driver):
     sectorsData.set_index('TICKER', inplace=True)
 
     stocksData = pd.merge(stocksData, sectorsData[['NOME', 'SETOR', 'SUBSETOR', 'SEGMENTO']], on='TICKER')
-    
+
     return stocksData
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=3))
