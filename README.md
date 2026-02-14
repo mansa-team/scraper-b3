@@ -2,6 +2,9 @@
 
 A high-performance Python scraper to collect, process, and store Brazilian stock market (B3) data from StatusInvest and TradingView. Built for research and for API data and models for the [Mansa](https://github.com/mansa-team) project.
 
+> [!IMPORTANT]
+> New changes made to this project are now made in the [Mansa's Server](https://github.com/mansa-team/server) repository, consult it for more info
+
 ## Installation
 1. Clone the repository:
    ```bash
